@@ -7,7 +7,7 @@ import numpy as np
 from pathlib import Path
 
 
-class HarryPotterfMRI(fMRIDataset):
+class HarryPotter(fMRIDataset):
     """Harry Potter dataset from *Simultaneously Uncovering the Patterns of
     Brain Regions Involved in Different Story
     Reading Subprocesses* by Wehbe et al. (2014). The dataset contains eight

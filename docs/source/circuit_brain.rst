@@ -1,4 +1,4 @@
-CircuitBrainAlignment API
+SynapticSync API
 ==========================
 This API is split into submodules. The ``dproc`` module contains well-known fMRI datasets wrapped with their necessary pre-processing. 
 The ``model`` module contains a wrapper for a ``HookedTransformer`` model that automatically keeps track of the internals of any HuggingFace model required for both the calculation of brain alignment and circuit discovery.This module also contains logic for patching.

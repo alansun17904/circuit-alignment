@@ -12,7 +12,7 @@ import sys
 sys.path.insert(0, os.path.abspath("../.."))
 
 
-project = 'CircuitBrainAlignment'
+project = 'SynapticSync'
 copyright = '2024, Alan Sun'
 author = 'Alan Sun'
 release = '0.0'
@@ -27,6 +27,7 @@ extensions = [
     "sphinx.ext.coverage",
     "sphinx.ext.viewcode",
     "sphinx.ext.autosummary",
+    "sphinx.ext.autosectionlabel",
 ]
 
 templates_path = ['_templates']
@@ -34,11 +35,16 @@ exclude_patterns = []
 
 autodoc_mock_imports = ["torch", "transformer_lens"]
 
-# -- Options for HTML output -------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
-
-html_theme = 'traditional'
+# html_theme = 'alabaster'
+html_theme = "nature"
 html_static_path = ['_static']
-html_title = "CircuitBrainAligment Documentation"
+html_title = f"{project} Documentation"
 napoleon_google_docstring = True
-
+html_favicon = "_static/brain-icon.png"
+numfig = True
+numfig_format = {
+    'code-block': 'Block %s',
+    'figure': 'Fig. %s',
+    'section': 'Section',
+    'table': 'Table %s',
+}

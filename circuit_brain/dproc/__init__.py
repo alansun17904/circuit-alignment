@@ -1,5 +1,5 @@
 from .base import fMRIDataset
-from .hpot import HarryPotterfMRI
+from .hpot import HarryPotter
 from .das import DAS
 
 
@@ -14,7 +14,7 @@ def get_dataset(dataset_id, ddir, **kwargs):
         ), "Must provide window size for Harry Potter dataset!"
         remove_format_chars = kwargs.get("remove_format_chars", False)
         remove_punc_spacing = kwargs.get("remove_punc_spacing", False)
-        return HarryPotterfMRI(
+        return HarryPotter(
             ddir, kwargs["window_size"], remove_format_chars, remove_punc_spacing
         )
     elif dataset_id == "das":

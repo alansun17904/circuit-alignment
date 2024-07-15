@@ -17,6 +17,7 @@ circuit\_brain.dproc.fMRIDataset
 circuit\_brain.dproc.HarryPotter
 ----------------------------------------
 
+.. _harrypotter:
 .. autoclass:: circuit_brain.dproc.hpot.HarryPotter
    :members:
    :undoc-members:
