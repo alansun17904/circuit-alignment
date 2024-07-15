@@ -5,9 +5,11 @@ dataset w/ stimuli should have. This class is not meant to be instantiated, but
 meant to be used as a factory class.
 
 Typical usage example:
-```python
-dataset = fMRIDataset.get_dataset(dataset_id, ddir, **kwargs)
-```
+
+.. code::python
+    
+    dataset = fMRIDataset.get_dataset(dataset_id, ddir, **kwargs)
+
 """
 
 from typing import List, Union

@@ -15,7 +15,7 @@ class DAS(fMRIDataset):
     to either drive or suppress BOLD response in the language network (500 each).
 
     The data directory can be downloaded from
-    [here](https://github.com/gretatuckute/drive_suppress_brains), the instantiations
+    `here <https://github.com/gretatuckute/drive_suppress_brains>`__, the instantiations
     of this class assumes this exact directory structure and file naming.
     """
 
@@ -29,9 +29,7 @@ class DAS(fMRIDataset):
         one should use the factory method in the `fMRIDataset` class.
 
         Args:
-            ddir: Path to the downloaded data directory. It is assumed that the
-            subdirectoy structure and file naming follows
-            [here](https://github.com/gretatuckute/drive_suppress_brains).
+            ddir: Path to the downloaded data directory. 
         """
         self.ddir = Path(ddir)
         self.df = pd.read_csv(self.ddir / "brain-lang-data_participant_20230728.csv")
