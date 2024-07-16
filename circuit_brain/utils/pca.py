@@ -12,6 +12,7 @@ def svd_flip(u, v):
     v *= signs.view(-1, 1)
     return u, v
 
+
 class PCA(nn.Module):
     def __init__(self, n_components):
         super().__init__()
@@ -23,7 +24,7 @@ class PCA(nn.Module):
         if self.n_components is not None:
             d = min(self.n_components, d)
         self.register_buffer("mean_", X.mean(0, keepdim=True))
-        Z = X - self.mean_ # center
+        Z = X - self.mean_  # center
         U, S, Vh = torch.linalg.svd(Z, full_matrices=False)
         Vt = Vh
         U, Vt = svd_flip(U, Vt)
@@ -45,15 +46,17 @@ class PCA(nn.Module):
         assert hasattr(self, "components_"), "PCA must be fit before use."
         return torch.matmul(Y, self.components_) + self.mean_
 
+
 if __name__ == "__main__":
     import numpy as np
     from sklearn.decomposition import PCA as sklearn_PCA
     from sklearn import datasets
+
     iris = torch.tensor(datasets.load_iris().data)
     _iris = iris.numpy()
-    devices = ['cpu']
+    devices = ["cpu"]
     if torch.cuda.is_available():
-        devices.append('cuda')
+        devices.append("cuda")
     for device in devices:
         iris = iris.to(device)
         for n_components in (2, 4, None):

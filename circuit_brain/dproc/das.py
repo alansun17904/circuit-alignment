@@ -29,7 +29,7 @@ class DAS(fMRIDataset):
         one should use the factory method in the `fMRIDataset` class.
 
         Args:
-            ddir: Path to the downloaded data directory. 
+            ddir: Path to the downloaded data directory.
         """
         self.ddir = Path(ddir)
         self.df = pd.read_csv(self.ddir / "brain-lang-data_participant_20230728.csv")

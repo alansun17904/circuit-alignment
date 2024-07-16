@@ -12,10 +12,10 @@ import sys
 sys.path.insert(0, os.path.abspath("../.."))
 
 
-project = 'SynapticSync'
-copyright = '2024, Alan Sun'
-author = 'Alan Sun'
-release = '0.0'
+project = "SynapticSync"
+copyright = "2024, Alan Sun"
+author = "Alan Sun"
+release = "0.0"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -30,21 +30,21 @@ extensions = [
     "sphinx.ext.autosectionlabel",
 ]
 
-templates_path = ['_templates']
+templates_path = ["_templates"]
 exclude_patterns = []
 
 autodoc_mock_imports = ["torch", "transformer_lens"]
 
 # html_theme = 'alabaster'
 html_theme = "nature"
-html_static_path = ['_static']
+html_static_path = ["_static"]
 html_title = f"{project} Documentation"
 napoleon_google_docstring = True
 html_favicon = "_static/brain-icon.png"
 numfig = True
 numfig_format = {
-    'code-block': 'Block %s',
-    'figure': 'Fig. %s',
-    'section': 'Section',
-    'table': 'Table %s',
+    "code-block": "Block %s",
+    "figure": "Fig. %s",
+    "section": "Section",
+    "table": "Table %s",
 }

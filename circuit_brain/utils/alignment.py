@@ -8,7 +8,9 @@ def per_subject_model_repr(sents, model, batch_size):
     return model.hidden_repr(sent_toks, batch_size)
 
 
-def per_subject_alignment(dataset, model_repr, subject_idx, folds, trim, ridge_cv, pca=None):
+def per_subject_alignment(
+    dataset, model_repr, subject_idx, folds, trim, ridge_cv, pca=None
+):
     fold_r2 = []
     for k, test_idx, train_idx in track(
         dataset.kfold(folds, trim), description=f"S{subject_idx+1}", total=folds

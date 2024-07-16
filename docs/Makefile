@@ -21,4 +21,4 @@ help:
 
 
 livehtml:
-	sphinx-autobuild "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) --pre-build "make clean" --watch ../. --port 8000
+	sphinx-autobuild "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) --pre-build "make clean" --watch ../. --port 5050

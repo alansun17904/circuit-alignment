@@ -153,8 +153,7 @@ class BrainAlignedLMModel:
         for batch in batch_idxs:
             caches.append(
                 ActivationCache(
-                    {k:acache[k][batch] for k in acache.keys()},
-                    acache.model
+                    {k: acache[k][batch] for k in acache.keys()}, acache.model
                 )
             )
         return caches

@@ -1,7 +1,8 @@
 import re
-from typing import List, Union, Tuple
+from typing import List, Union, Tuple, Generator
 
 from .base import fMRIDataset
+from circuit_brain.utils import word_token_corr
 
 import numpy as np
 from pathlib import Path
@@ -29,6 +30,7 @@ class HarryPotter(fMRIDataset):
     def __init__(
         self,
         ddir: str,
+        context_size: int,
         window_size: int,
         tokenizer: PreTrainedTokenizer,
         remove_format_chars: bool = False,
@@ -42,6 +44,8 @@ class HarryPotter(fMRIDataset):
             ddir: Path to the downloaded data directory. It is assumed that the
                 subdirectory structure and file naming follows
                 `here <https://drive.google.com/drive/folders/1Q6zVCAJtKuLOh-zWpkS3lH8LBvHcEOE8>`__.
+            context_size: For a given fMRI measurement, the number of previous tokens that we use
+                to compute a given window (see `window_size` below).
             window_size: For a given fMRI measurement, the number of previous words
                 that are assumed to be a part of this fMRI's context.
             tokenizer: a HuggingFace tokenizer
@@ -54,9 +58,9 @@ class HarryPotter(fMRIDataset):
                 around it).
             pool_rois: If true, then the voxels are aggregated according to the brain regions
             that they belong to. In particular, we only focus on eight regions that are associated
-            with language processing. 
+            with language processing.
         """
-
+        self.context_size = context_size
         self.window_size = window_size
         self.ddir = Path(ddir)
         self.fmri_dir = self.ddir / "fMRI"
@@ -66,6 +70,12 @@ class HarryPotter(fMRIDataset):
         self.remove_format_chars = remove_format_chars
         self.remove_punc_spacing = remove_punc_spacing
         self.tokenizer = tokenizer
+
+        # truncate and pad from the left side
+        self.tokenizer.truncation_side = "left"
+        self.tokenizer.padding_side = "left"
+        if self.tokenizer.pad_token is None:
+            self.tokenizer.pad_token = self.tokenizer.eos_token
 
         # load metadata
         self.words = np.load(self.fmri_dir / "words_fmri.npy")
@@ -91,7 +101,23 @@ class HarryPotter(fMRIDataset):
         self.unify_em_dash = lambda x: re.sub(r"--", "—", x)
         self.remove_em_spacing = lambda x: re.sub(r"\s*—\s*", "—", x)
 
+        self.contexts = np.empty(len(self.fmri_timing), dtype=object)
+        for i, mri_time in enumerate(self.fmri_timing):
+            f = filter(lambda x: x[0] <= mri_time, zip(self.word_timing, self.words))
+            t_proc = " ".join(list(f))
+            if self.remove_punc_spacing:
+                t_proc = self.remove_ellipses_spacing(t_proc)
+                t_proc = self.unify_em_dash(t_proc)
+                t_proc = self.remove_em_spacing(t_proc)
+            if self.remove_format_chars:
+                t_proc = self.remove_format_chars(t_proc)
+            self.contexts[i] = t_proc
+
     def remove_ellipses_spacing(self, text):
+        """Given some text, transformers ellipses in the form of ". . ." to
+        the grammatically correct format of "...". In the stimulus all punctuation
+        is formatted with the former spacing.
+        """
         es_pat = r"\.\s+\."
         self.res = lambda x: re.sub(es_pat, "..", x)
         while re.search(es_pat, text):
@@ -102,18 +128,35 @@ class HarryPotter(fMRIDataset):
         """Gets the total number of subjects."""
         return len(self.subjects)
 
-    def __getitem__(self, idx) -> Union[np.array, Tuple[dict, np.array]]:
+    def __getitem__(self, idx: int) -> Union[np.array, Tuple[dict, np.array]]:
         """Given the index of the subject get their corresponding fMRI recording.
-        If :code:`self.pool_rois` is true, then the subject recordings along with a 
-        dictionary is returned where the keys are the names of the regions of interest 
+        If :code:`self.pool_rois` is true, then the subject recordings along with a
+        dictionary is returned where the keys are the names of the regions of interest
         and the values are a boolean mask (of dimension equal to the number of voxels)
         which denote whether each voxel is a part of that particular region of interest.
+
+        Args:
+            idx: A numerical index that correspond to the subject whose recordings we wish to
+                retrieve. The total number of subjects can be found by running
+                :code:`HarryPotter.__len__()`. Moreover, the correspondance between the indices
+                and the actual participant codes is stored in `HarryPotter.subject_idxs`.
+
+        Returns:
+            If `self.pool_rois` is true, then a tuple is returned where the first entry
+            is the fMRI measurements of the subject across all time intervals, the second
+            entry is a dictionary that maps the name of the brain region to a boolean mask
+            which corresponds voxels to particular brain regions.
+
+            On the other hand, if `self.pool_rois` is true, only the aforementioned first entry
+            is returned as an array.
         """
         if self.pool_rois:
             self.subjects[idx], self.subject_rois[idx]
         return self.subjects[idx]
 
-    def kfold(self, folds: int, trim: int):
+    def kfold(
+        self, folds: int, trim: int
+    ) -> Generator[Tuple[int, np.array, np.array], None, None]:
         """A generator that yields `folds` number of training/test folds while trimming
         off `trim` number of samples at the ends of the training folds.
 
@@ -122,12 +165,12 @@ class HarryPotter(fMRIDataset):
 
         Args:
             folds: The number of folds.
-            trim: The number of samples to remove from either end of the training and
+            trim: The number of fMRI measurements to remove from either end of the training and
                 test folds.
 
         Yields:
             A tuple of the index of the current fold, the indices of the test examples,
-            and the indices of the training examples.
+            and the indices of the training examples (in this order).
 
         Raises:
             AssertionError: If the number of trimmed samples is greater than the total
@@ -157,3 +200,21 @@ class HarryPotter(fMRIDataset):
             yield f, list(range(start, end)), list(range(0, train_st)) + list(
                 range(train_ed, len(self.fmri_timing))
             )
+
+    def idx2samples(self, subject_idx, idxs):
+        """Given an array of indices of the fMRI measurements that we wish to"""
+        # get the indices fMRI measurements and normalize them
+        measures = self.subjects[subject_idx][idxs]
+        if self.pool_rois:
+            rois = self.rois[self.subject_idxs[subject_idx]]
+            # do not get the "all" region
+            roi_measures = np.zeros((len(idxs), 8))
+            for i, (label, mask) in enumerate(rois.items()):
+                if label == "all":
+                    continue
+                # average across all voxels that are in the same region
+                roi_measures[i] = np.mean(measures[:, mask], axis=1)
+            measures = roi_measures
+
+        # normalize each voxel/roi across time
+        measures = (measures - np.mean(measures, axis=0)) / np.std(measures, axis=0)

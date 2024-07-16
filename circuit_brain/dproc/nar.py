@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 class Narratives(fMRIDataset):
-    subject_idxs = [f"{idx:03}" for idx in range(1,346)]
+    subject_idxs = [f"{idx:03}" for idx in range(1, 346)]
     stories = [
         "pieman",
         "tunnel",
@@ -39,7 +39,7 @@ class Narratives(fMRIDataset):
         "notthefalllongscram": ["066", "335"],
         "notthefallshortscram": ["333"],
         "merlin": ["158"],
-        "sherlock": ["139"]
+        "sherlock": ["139"],
     }
 
     def __init__(self, ddir):

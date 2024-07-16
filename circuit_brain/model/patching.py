@@ -111,7 +111,7 @@ def generic_activation_patch(
     index_axis_names: Optional[Sequence[AxisNames]] = None,
     index_df: Optional[pd.DataFrame] = None,
     return_index_df: Literal[False] = False,
-    batch_size: int=64,
+    batch_size: int = 64,
 ) -> torch.Tensor: ...
 
 
@@ -130,7 +130,7 @@ def generic_activation_patch(
     index_axis_names: Optional[Sequence[AxisNames]],
     index_df: Optional[pd.DataFrame],
     return_index_df: Literal[True],
-    batch_size: int=64,
+    batch_size: int = 64,
 ) -> Tuple[torch.Tensor, pd.DataFrame]: ...
 
 
@@ -148,7 +148,7 @@ def generic_activation_patch(
     index_axis_names: Optional[Sequence[AxisNames]] = None,
     index_df: Optional[pd.DataFrame] = None,
     return_index_df: bool = False,
-    batch_size: int=128,
+    batch_size: int = 128,
 ) -> Union[torch.Tensor, Tuple[torch.Tensor, pd.DataFrame]]:
     """
     A generic function to do activation patching, will be specialised to specific use cases.
@@ -233,7 +233,9 @@ def generic_activation_patch(
             index = index_row[1].to_list()
             # The current activation name is just the activation name plus the layer
             # (assumed to be the first element of the input)
-            current_activation_name = utils.get_act_name(activation_name, layer=index[0])
+            current_activation_name = utils.get_act_name(
+                activation_name, layer=index[0]
+            )
 
             # The hook function cannot receive additional inputs, so we use partial to
             # include the specific index and the corresponding clean activation
@@ -691,7 +693,11 @@ get_act_patch_attn_head_pattern_all_pos.__doc__ = """
 
 
 def get_act_patch_attn_head_all_pos_every(
-    model, corrupted_tokens, clean_cache, metric, batch_size=8,
+    model,
+    corrupted_tokens,
+    clean_cache,
+    metric,
+    batch_size=8,
 ) -> Float[torch.Tensor, "patch_type layer head"]:
     """Helper function to get activation patching results for every head (across all positions) for every act type (output, query, key, value, pattern). Wrapper around each's patching function, returns a stacked tensor of shape [5, n_layers, n_heads]
 
@@ -711,13 +717,19 @@ def get_act_patch_attn_head_all_pos_every(
         )
     )
     act_patch_results.append(
-        get_act_patch_attn_head_q_all_pos(model, corrupted_tokens, clean_cache, metric, batch_size=batch_size)
+        get_act_patch_attn_head_q_all_pos(
+            model, corrupted_tokens, clean_cache, metric, batch_size=batch_size
+        )
     )
     act_patch_results.append(
-        get_act_patch_attn_head_k_all_pos(model, corrupted_tokens, clean_cache, metric, batch_size=batch_size)
+        get_act_patch_attn_head_k_all_pos(
+            model, corrupted_tokens, clean_cache, metric, batch_size=batch_size
+        )
     )
     act_patch_results.append(
-        get_act_patch_attn_head_v_all_pos(model, corrupted_tokens, clean_cache, metric, batch_size=batch_size)
+        get_act_patch_attn_head_v_all_pos(
+            model, corrupted_tokens, clean_cache, metric, batch_size=batch_size
+        )
     )
     act_patch_results.append(
         get_act_patch_attn_head_pattern_all_pos(
@@ -743,16 +755,24 @@ def get_act_patch_attn_head_by_pos_every(
     """
     act_patch_results = []
     act_patch_results.append(
-        get_act_patch_attn_head_out_by_pos(model, corrupted_tokens, clean_cache, metric, batch_size=batch_size)
+        get_act_patch_attn_head_out_by_pos(
+            model, corrupted_tokens, clean_cache, metric, batch_size=batch_size
+        )
     )
     act_patch_results.append(
-        get_act_patch_attn_head_q_by_pos(model, corrupted_tokens, clean_cache, metric, batch_size=batch_size)
+        get_act_patch_attn_head_q_by_pos(
+            model, corrupted_tokens, clean_cache, metric, batch_size=batch_size
+        )
     )
     act_patch_results.append(
-        get_act_patch_attn_head_k_by_pos(model, corrupted_tokens, clean_cache, metric, batch_size=batch_size)
+        get_act_patch_attn_head_k_by_pos(
+            model, corrupted_tokens, clean_cache, metric, batch_size=batch_size
+        )
     )
     act_patch_results.append(
-        get_act_patch_attn_head_v_by_pos(model, corrupted_tokens, clean_cache, metric, batch_size=batch_size)
+        get_act_patch_attn_head_v_by_pos(
+            model, corrupted_tokens, clean_cache, metric, batch_size=batch_size
+        )
     )
 
     # Reshape pattern to be compatible with the rest of the results
@@ -781,12 +801,18 @@ def get_act_patch_block_every(
     """
     act_patch_results = []
     act_patch_results.append(
-        get_act_patch_resid_pre(model, corrupted_tokens, clean_cache, metric, batch_size=batch_size)
+        get_act_patch_resid_pre(
+            model, corrupted_tokens, clean_cache, metric, batch_size=batch_size
+        )
     )
     act_patch_results.append(
-        get_act_patch_attn_out(model, corrupted_tokens, clean_cache, metric, batch_size=batch_size)
+        get_act_patch_attn_out(
+            model, corrupted_tokens, clean_cache, metric, batch_size=batch_size
+        )
     )
     act_patch_results.append(
-        get_act_patch_mlp_out(model, corrupted_tokens, clean_cache, metric, batch_size=batch_size)
+        get_act_patch_mlp_out(
+            model, corrupted_tokens, clean_cache, metric, batch_size=batch_size
+        )
     )
     return torch.stack(act_patch_results, dim=0)
