@@ -42,7 +42,7 @@ def word_token_corr(
     if not_list:
         return toks["input_ids"][0], word_split[0], index_mapping[0]
 
-    return toks, word_split, np.array(index_mapping)
+    return toks, word_split, index_mapping
 
 
 def _per_example_token_mapping(

@@ -123,6 +123,8 @@ class HarryPotter(fMRIDataset):
             padding=True,
             max_length=self.context_size
         )
+        self.idxmap = np.array(self.idxmap)
+        self.toks = self.toks["input_ids"]
 
     def remove_ellipses_spacing(self, text):
         """Given some text, transformers ellipses in the form of ". . ." to
@@ -162,7 +164,7 @@ class HarryPotter(fMRIDataset):
             is returned as an array.
         """
         if self.pool_rois:
-            self.subjects[idx], self.subject_rois[idx]
+            return self.subjects[idx], self.subject_rois[idx]
         return self.subjects[idx]
 
     def kfold(
@@ -214,18 +216,21 @@ class HarryPotter(fMRIDataset):
         """Given an array of indices of the fMRI measurements that we wish to"""
         # get the indices fMRI measurements and normalize them
         measures = self.subjects[subject_idx][idxs]
+        
         if self.pool_rois:
-            rois = self.rois[self.subject_idxs[subject_idx]]
+            rois = self.subject_rois[subject_idx]
             # do not get the "all" region
             roi_measures = np.zeros((len(idxs), 8))
+            del rois["all"]
             for i, (label, mask) in enumerate(rois.items()):
                 if label == "all":
                     continue
                 # average across all voxels that are in the same region
-                roi_measures[i] = np.mean(measures[:, mask], axis=1)
+                roi_measures[:, i] = np.mean(measures[:, mask], axis=1)
+            
             measures = roi_measures
 
         # normalize each voxel/roi across time
         measures = (measures - np.mean(measures, axis=0)) / np.std(measures, axis=0)
-
-        return measures, self.toks[idxs], self.idxmap[idxs]
+        print(type(self.toks))
+        return measures, np.array(self.toks)[idxs], np.array(self.idxmap)[idxs]
