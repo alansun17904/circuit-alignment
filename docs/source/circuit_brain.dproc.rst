@@ -20,7 +20,7 @@ circuit\_brain.dproc.HarryPotter
 .. _harrypotter:
 .. autoclass:: circuit_brain.dproc.hpot.HarryPotter
    :members:
-   :undoc-members:
+   :special-members:
    :show-inheritance:
 
 circuit\_brain.dproc.DAS
@@ -28,7 +28,7 @@ circuit\_brain.dproc.DAS
 
 .. autoclass:: circuit_brain.dproc.das.DAS
    :members:
-   :undoc-members:
+   :special-members:
    :show-inheritance:
 
 circuit\_brain.dproc.nar.Narratives
@@ -36,6 +36,6 @@ circuit\_brain.dproc.nar.Narratives
 
 .. autoclass:: circuit_brain.dproc.nar.Narratives
    :members:
-   :undoc-members:
+   :special-members:
    :show-inheritance:
 

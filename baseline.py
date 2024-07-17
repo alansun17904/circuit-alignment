@@ -17,8 +17,12 @@ parser.add_argument("tok_name", type=str, help="id of tokenizer")
 parser.add_argument("batch_size", type=int)
 parser.add_argument("window_size", type=int)
 parser.add_argument("ofname", type=str, help="name of output file")
-parser.add_argument("--rfc", default=False, action="store_true", help="remove formatting characters")
-parser.add_argument("--rps", default=False, action="store_true", help="remove punctuation spacing")
+parser.add_argument(
+    "--rfc", default=False, action="store_true", help="remove formatting characters"
+)
+parser.add_argument(
+    "--rps", default=False, action="store_true", help="remove punctuation spacing"
+)
 opts = parser.parse_args()
 
 
@@ -33,12 +37,10 @@ if __name__ == "__main__":
         tokenizer=atok,
         remove_format_chars=opts.rfc,
         remove_punc_spacing=opts.rps,
-        pool_rois=True
+        pool_rois=True,
     )
 
-    model_repr = utils.per_subject_model_repr(
-        hp.fmri_contexts, m, opts.batch_size
-    )
+    model_repr = utils.per_subject_model_repr(hp.fmri_contexts, m, opts.batch_size)
     # compute brain-alignment scores
     ridge_cv = utils.RidgeCV(n_splits=5)
     pickle.dump(

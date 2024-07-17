@@ -1,3 +1,7 @@
+# nfs?
+.nfs*
+
+
 # Jupyter notebooks
 notebooks/
 # Pickle files and other data files

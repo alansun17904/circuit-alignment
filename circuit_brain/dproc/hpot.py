@@ -121,7 +121,7 @@ class HarryPotter(fMRIDataset):
             self.contexts,
             truncation=True,
             padding=True,
-            max_length=self.context_size
+            max_length=self.context_size,
         )
         self.idxmap = np.array(self.idxmap)
         self.toks = self.toks["input_ids"]
@@ -210,13 +210,13 @@ class HarryPotter(fMRIDataset):
                 range(train_ed, len(self.fmri_timing))
             )
 
-            yield f, self.idx2samples(subject_idx, test_idxs), self.idx2samples(subject_idx, train_idxs)
+            yield f, self._idx2samples(subject_idx, test_idxs), self._idx2samples(
+                subject_idx, train_idxs
+            )
 
-    def idx2samples(self, subject_idx, idxs):
-        """Given an array of indices of the fMRI measurements that we wish to"""
-        # get the indices fMRI measurements and normalize them
+    def _idx2samples(self, subject_idx, idxs):
         measures = self.subjects[subject_idx][idxs]
-        
+
         if self.pool_rois:
             rois = self.subject_rois[subject_idx]
             # do not get the "all" region
@@ -227,7 +227,7 @@ class HarryPotter(fMRIDataset):
                     continue
                 # average across all voxels that are in the same region
                 roi_measures[:, i] = np.mean(measures[:, mask], axis=1)
-            
+
             measures = roi_measures
 
         # normalize each voxel/roi across time

@@ -32,7 +32,9 @@ def word_token_corr(
     toks = tokenizer.batch_encode_plus(text, return_offsets_mapping=True, **kwargs)
     word_split = []
     index_mapping = []
-    for idx, t in tqdm.tqdm(enumerate(toks["input_ids"]), desc="Tokenizing", total=len(toks["input_ids"])):
+    for idx, t in tqdm.tqdm(
+        enumerate(toks["input_ids"]), desc="Tokenizing", total=len(toks["input_ids"])
+    ):
         word, indices = _per_example_token_mapping(
             text[idx], t, toks["offset_mapping"][idx]
         )

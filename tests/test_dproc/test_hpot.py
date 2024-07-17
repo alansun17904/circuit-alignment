@@ -101,7 +101,7 @@ def test_idx2samples_pool(ds_pool):
     # get 4 different fMRI measurements
     idxs = random.sample(range(0, 80), 15)
     for j in range(len(ds_pool)):
-        measures, toks, idxmap = ds_pool.idx2samples(j, idxs)
+        measures, toks, idxmap = ds_pool._idx2samples(j, idxs)
         assert measures.shape[0] == 15
         assert measures.shape[1] == 8
         assert toks.shape[0] == idxmap.shape[0] == 15
