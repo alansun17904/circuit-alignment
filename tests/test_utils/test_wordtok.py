@@ -12,24 +12,24 @@ def token_ans(request):
     ans = None
     if name == "gpt2":  # BPE
         ans = [
-            [0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 7],
-            [0, 1, 2, 2, 2, 3, 4, 5, 5],
+            [7, 7, 7, 6, 5, 4, 3, 2, 1, 0, 0],
+            [5, 4, 3, 3, 3, 2, 1, 0, 0],
         ]
         tokenizer.pad_token = tokenizer.eos_token
     elif name == "bert-base-uncased":  # WordPiece
         ans = [
-            [0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 7, 7],
-            [0, 0, 1, 2, 2, 2, 3, 4, 5, 5, 5],
+            [7, 7, 7, 7, 6, 5, 4, 3, 2, 1, 0, 0, 0],
+            [5, 5, 4, 3, 3, 3, 2, 1, 0, 0, 0],
         ]
     elif name == "roberta-base":  # BPE w/ special tokens
         ans = [
-            [0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 7, 7],
-            [0, 0, 1, 2, 2, 2, 3, 4, 5, 5, 5],
+            [7, 7, 7, 7, 6, 5, 4, 3, 2, 1, 0, 0, 0],
+            [5, 5, 4, 3, 3, 3, 2, 1, 0, 0, 0],
         ]
     elif name == "t5-base":  # SentencePiece
         ans = [
-            [0, 0, 0, 0, 1, 2, 3, 4, 4, 5, 6, 7, 7, 7],
-            [0, 1, 2, 2, 2, 2, 2, 3, 4, 5, 5, 5],
+            [7, 7, 7, 7, 6, 5, 4, 4, 3, 2, 1, 0, 0, 0],
+            [5, 4, 4, 3, 3, 3, 3, 2, 1, 0, 0, 0],
         ]
     return tokenizer, ans
 
@@ -61,7 +61,7 @@ def test_word_token_corr_multi(token_ans, sents):
 
     # extend the second sentence of the answer token to the same length
     pad = [ans[1][-1]] * (len(ans[0]) - len(ans[1]))
-    ans[1].extend(pad)
+    ans[1] = ans[1] + pad
 
     _, words, idx = word_token_corr(tokenizer, sents, padding=True)
     np.testing.assert_array_equal(ans, idx)

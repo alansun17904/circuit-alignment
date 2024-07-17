@@ -104,7 +104,8 @@ class HarryPotter(fMRIDataset):
         self.contexts = np.empty(len(self.fmri_timing), dtype=object)
         for i, mri_time in enumerate(self.fmri_timing):
             f = filter(lambda x: x[0] <= mri_time, zip(self.word_timing, self.words))
-            t_proc = " ".join(list(f))
+            w = map(lambda x: x[1], f)
+            t_proc = " ".join(list(w))
             if self.remove_punc_spacing:
                 t_proc = self.remove_ellipses_spacing(t_proc)
                 t_proc = self.unify_em_dash(t_proc)
@@ -112,6 +113,16 @@ class HarryPotter(fMRIDataset):
             if self.remove_format_chars:
                 t_proc = self.remove_format_chars(t_proc)
             self.contexts[i] = t_proc
+        self.contexts = self.contexts.tolist()
+
+        # tokenize the context and get the word correspondance
+        self.toks, _, self.idxmap = word_token_corr(
+            tokenizer,
+            self.contexts,
+            truncation=True,
+            padding=True,
+            max_length=self.context_size
+        )
 
     def remove_ellipses_spacing(self, text):
         """Given some text, transformers ellipses in the form of ". . ." to
@@ -155,7 +166,7 @@ class HarryPotter(fMRIDataset):
         return self.subjects[idx]
 
     def kfold(
-        self, folds: int, trim: int
+        self, subject_idx: int, folds: int, trim: int
     ) -> Generator[Tuple[int, np.array, np.array], None, None]:
         """A generator that yields `folds` number of training/test folds while trimming
         off `trim` number of samples at the ends of the training folds.
@@ -176,11 +187,6 @@ class HarryPotter(fMRIDataset):
             AssertionError: If the number of trimmed samples is greater than the total
                 number of examples in the test fold.
         """
-        print(
-            f"There are {len(self.fmri_timing)} fMRI measurements available.",
-            f"Splitting {folds} folds means roughly {len(self.fmri_timing) // folds}",
-            f"measurements / fold, and {len(self.words) // folds} words / fold.",
-        )
         fold_size = len(self.fmri_timing) // folds
         assert 2 * trim <= fold_size
 
@@ -197,9 +203,12 @@ class HarryPotter(fMRIDataset):
             train_st = max(start - trim, 0)
             train_ed = min(end + trim, len(self.fmri_timing))
 
-            yield f, list(range(start, end)), list(range(0, train_st)) + list(
+            test_idxs = list(range(start, end))
+            train_idxs = list(range(0, train_st)) + list(
                 range(train_ed, len(self.fmri_timing))
             )
+
+            yield f, self.idx2samples(subject_idx, test_idxs), self.idx2samples(subject_idx, train_idxs)
 
     def idx2samples(self, subject_idx, idxs):
         """Given an array of indices of the fMRI measurements that we wish to"""
@@ -218,3 +227,5 @@ class HarryPotter(fMRIDataset):
 
         # normalize each voxel/roi across time
         measures = (measures - np.mean(measures, axis=0)) / np.std(measures, axis=0)
+
+        return measures, self.toks[idxs], self.idxmap[idxs]
