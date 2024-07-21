@@ -1,5 +1,6 @@
 from . import patching
 from .hooked_model import BrainAlignTransformer
+from . import transforms
 
 
 from transformer_lens import HookedEncoder, HookedEncoderDecoder, HookedTransformer

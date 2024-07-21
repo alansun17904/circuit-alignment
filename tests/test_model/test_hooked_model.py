@@ -66,3 +66,12 @@ def test_resid_post_identity_t5(ba_t5, sents):
 
 def test_resid_post_identity_gpt(ba_gpt2, sents):
     model_logit_reprs(ba_gpt2, sents)
+
+
+def test_generate_w_logits(ba_gpt2, sents):
+    _, model = ba_gpt2
+    for sent in sents:
+        tokens, logits = model.generate(sent)
+        assert logits.shape[0] == 1
+        assert logits.shape[1] == len(tokens)
+        assert logits.shape[2] == ba_gpt2.cfg.d_vocab

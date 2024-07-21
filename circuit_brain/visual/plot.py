@@ -1,10 +1,12 @@
 import matplotlib.pyplot as plt
 
 
-def heatmap(matrix, ax, cmap="YlOrRd", write_text=True, fontsize=7, valfunc=None, colorfunc=None):
+def heatmap(
+    matrix, ax, cmap="YlOrRd", write_text=True, fontsize=7, valfunc=None, colorfunc=None
+):
     """Plots the given matrix as a heatmap on the given axes.
 
-    Args: 
+    Args:
         matrix: A 2D numpy array that consists of either int or float datatypes.
         ax: matplotlib axes
         cmap (str): color palette of the heatmap
@@ -21,11 +23,11 @@ def heatmap(matrix, ax, cmap="YlOrRd", write_text=True, fontsize=7, valfunc=None
         Plots the matrix on the axes using ``imshow``, then returns this image.
     """
     im = ax.imshow(matrix, cmap=cmap)
-    valfunc = valfunc if valfunc is not None else lambda x : x
+    valfunc = valfunc if valfunc is not None else lambda x: x
     colorfunc = colorfunc is colorfunc if not None else lambda x: "black"
     for i in range(len(matrix)):
         for j in range(len(matrix[i])):
-            val = matrix[i,j]
+            val = matrix[i, j]
             if write_text:
                 im.axes.text(
                     j,
@@ -34,6 +36,6 @@ def heatmap(matrix, ax, cmap="YlOrRd", write_text=True, fontsize=7, valfunc=None
                     fontsize=fontsize,
                     ha="center",
                     va="center",
-                    color=colorfunc(val)
+                    color=colorfunc(val),
                 )
     return im
