@@ -25,8 +25,13 @@ def word2idx():
 
 
 @pytest.fixture
+def filter():
+    return torch.ones(35,) / 35
+
+
+@pytest.fixture
 def pcas():
-    return [PCA(5), PCA(10), PCA(15), PCA(17)]
+    return [PCA(5), PCA(10), PCA(15), PCA(17)] * 3 + [PCA(10)]
 
 
 def test_avg(layer_repr):
@@ -60,7 +65,7 @@ def test_wordavg(layer_repr, word2idx):
     assert len(rproc) == 13
     for idx, l in enumerate(rproc):
         assert l.shape[0] == 4
-        assert l.shape[1] == max(word2idx[idx]) + 1
+        assert l.shape[1] == torch.max(torch.LongTensor(word2idx[idx])).item() + 1
         assert l.shape[2] == 20
 
 
@@ -84,7 +89,15 @@ def test_ccrop(layer_repr):
         np.testing.assert_array_almost_equal(layer_repr[idx][:, -20:, :], l)
 
 
-def test_convolve(layer_repr): ...
+def test_convolve(layer_repr, filter):
+    conv = transforms.ConvolveHRF(filter)
+    rproc = conv(layer_repr)
+    assert len(rproc) == 13
+    for idx, l in enumerate(rproc):
+        assert l.shape[0] == 4
+        assert l.shape[1] == 1
+        assert l.shape[2] == 20
+        torch.testing.assert_close(l, layer_repr[idx].mean(axis=1).unsqueeze(1))
 
 
 def test_compose(layer_repr): ...
@@ -92,12 +105,15 @@ def test_compose(layer_repr): ...
 
 def test_pcat(pcas, layer_repr):
     pcat = transforms.PCAt(pcas, fit=True)
-    pcaed = pcat(layer_repr)
-    # average across the token dimension firrst
-    for idx in range(len(layer_repr)):
-        layer_repr[idx] = torch.mean(layer_repr[idx], dim=1)
 
+    # average across the token dimension firrst
+    lhs = []
+    for idx in range(len(layer_repr)):
+        lhs.append(torch.mean(layer_repr[idx], dim=1))
+    assert len(lhs) == 13
+    pcaed = pcat(lhs)    
     assert len(pcaed) == 13
     for idx, l in enumerate(pcaed):
+        print(l.shape)
         assert l.shape[0] == 4
         assert l.shape[1] == pcas[idx].n_components

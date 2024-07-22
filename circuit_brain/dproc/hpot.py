@@ -4,6 +4,7 @@ from typing import List, Union, Tuple, Generator
 from .base import fMRIDataset
 from circuit_brain.utils import word_token_corr
 
+import torch
 import numpy as np
 from pathlib import Path
 from transformers import PreTrainedTokenizer
@@ -182,8 +183,10 @@ class HarryPotter(fMRIDataset):
                 test folds.
 
         Yields:
-            A tuple of the index of the current fold, the indices of the test examples,
-            and the indices of the training examples (in this order).
+            A tuple of the index of the current fold, (for both training and testing folds)
+            normalized fMRI measurements within fold for each of the points of interest in the 
+            fold as well as the tokens associated with each of these measurements. The last entry
+            in each of these pairs is the mapping between words and token indices.
 
         Raises:
             AssertionError: If the number of trimmed samples is greater than the total
@@ -233,4 +236,4 @@ class HarryPotter(fMRIDataset):
         # normalize each voxel/roi across time
         measures = (measures - np.mean(measures, axis=0)) / np.std(measures, axis=0)
         print(type(self.toks))
-        return measures, np.array(self.toks)[idxs], np.array(self.idxmap)[idxs]
+        return torch.Tensor(measures), torch.Tensor(self.toks)[idxs], torch.Tensor(self.idxmap)[idxs]

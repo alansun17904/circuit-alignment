@@ -4,6 +4,7 @@ import argparse
 import circuit_brain.utils as utils
 from circuit_brain.model import BrainAlignedLMModel
 from circuit_brain.dproc import fMRIDataset
+from circuit_brain.model import transforms
 
 import torch
 from transformers import AutoTokenizer
@@ -40,10 +41,34 @@ if __name__ == "__main__":
         pool_rois=True,
     )
 
-    model_repr = utils.per_subject_model_repr(hp.fmri_contexts, m, opts.batch_size)
-    # compute brain-alignment scores
+    rpros = transforms.Compose([
+        transforms.ContextCrop(25),
+        transforms.Normalize(),
+        transforms.ContextCrop(1),
+    ])
+
     ridge_cv = utils.RidgeCV(n_splits=5)
+
+    subjs = []
+    for sidx in range(len(hp)):
+        ds_generator = hp.kfold(sidx, 5, 5)
+        layers = []
+        for _, train, test in ds_generator:
+            train_fmri, train_toks, train_idxmap = train
+            test_fmri, test_toks, test_idxmap = test
+            train_model_repr = m.resid_post(train_toks, batch_size=opts.batch_size, rpros=rpros)
+            test_model_repr = m.resid_post(test_toks, batch_size=opts.batch_size, rpros=rpros)
+            lr2 = torch.zeros(len(train_model_repr))
+            for layer in train_model_repr:
+                ridge_cv.fit(train_model_repr[layer], train_fmri)
+                lr2[layer] = torch.mean(ridge_cv.score(test_model_repr[layer], test_fmri)).item()
+            layers.append(lr2)
+        subjs.append(torch.mean(torch.Tensor(layers), dim=1))
+    print(subjs)
+
+    # compute brain-alignment scores
+    
     pickle.dump(
-        utils.across_subject_alignment(hp, model_repr, 5, 10, ridge_cv, pca=None),
+        subjs,
         open(f"data/base_align_data/{opts.ofname}", "wb+"),
     )

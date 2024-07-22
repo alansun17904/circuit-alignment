@@ -1,9 +1,11 @@
 import abc
 from typing import List, Optional
+from functools import partial
 
 from circuit_brain.utils import PCA
 
 import torch
+import torch.nn.functional as F
 
 
 class Transform:
@@ -15,6 +17,7 @@ class Compose(Transform):
     def __init__(self, transforms: List[Transform]):
         self.transforms = transforms
 
+    @torch.no_grad()
     def __call__(self, layer_repr):
         out = layer_repr
         for trans in self.transforms:
@@ -23,6 +26,7 @@ class Compose(Transform):
 
 
 class Avg(Transform):
+    @torch.no_grad()
     def __call__(self, layer_repr):
         out = []
         for l in layer_repr:
@@ -34,6 +38,7 @@ class Normalize(Transform):
     def __init__(self, dim=1):
         self.dim = dim
 
+    @torch.no_grad()
     def __call__(self, layer_repr):
         out = []
         for l in layer_repr:
@@ -47,28 +52,30 @@ class WordAvg(Transform):
     def __init__(self, word2idx):
         self.word2idx = torch.LongTensor(word2idx)
         # get the maximum number of words
-        self.mwords = torch.max(word2idx).item() + 1
-        self._wordavg = torch.vmap(self._avg_single)
+        self.mwords = torch.max(self.word2idx).item() + 1
 
+    @torch.no_grad()
     def __call__(self, layer_repr):
         out = []
 
         for l in layer_repr:
-            for b in l:
-                out.append(self._wordavg(l, self.word2idx))
+            ls = torch.zeros(l.shape[0], self.mwords, l.shape[2])
+            for i, b in enumerate(l):
+                ls[i] = self._avg_single(b, self.word2idx[i])
+            out.append(ls)
         return out
 
-    # def _avg_single(self, repr: torch.Tensor, w2i: torch.LongTensor):
-    #     _, counts = torch.unique(w2i, return_counts=True, dim=0)
-    #     idxs = torch.cumsum(counts)
-    #     nt = torch.zeros(self.mwords, repr.shape[1])
-    #     words = len(nt) - 1
-    #     for j in range(len(idxs)-1,-1,-1):
-    #         start, end = idxs[j-1] if j - 1 >= 0 else 0, idxs[j]
-    #         nt[words] = torch.mean(repr[:,start:end,:], dim=1)
-    #         words -= 1
-    #     nt[:words] = torch.mean(nt[words:], dim=0)
-    #     return nt
+    def _avg_single(self, repr: torch.Tensor, w2i: torch.LongTensor):
+        _, counts = torch.unique(w2i, return_counts=True, dim=0)
+        idxs = torch.cumsum(counts)
+        nt = torch.zeros(self.mwords, repr.shape[1])
+        words = len(nt) - 1
+        for j in range(len(idxs)-1,-1,-1):
+            start, end = idxs[j-1] if j - 1 >= 0 else 0, idxs[j]
+            nt[words] = torch.mean(repr[:,start:end,:], dim=1)
+            words -= 1
+        nt[:words] = torch.mean(nt[words:], dim=0)
+        return nt
 
 
 class Concat(Transform):
@@ -76,6 +83,7 @@ class Concat(Transform):
         self.source_dim = source_dim
         self.target_dim = target_dim
 
+    @torch.no_grad()
     def __call__(self, layer_repr):
         out = []
         for l in layer_repr:
@@ -90,6 +98,7 @@ class ContextCrop(Transform):
     def __init__(self, window_size: int):
         self.window_size = window_size
 
+    @torch.no_grad()
     def __call__(self, layer_repr):
         out = []
         for l in layer_repr:
@@ -98,8 +107,18 @@ class ContextCrop(Transform):
 
 
 class ConvolveHRF(Transform):
-    def __init__(self):
-        pass
+    def __init__(self, filter: torch.Tensor):
+        self.filter = filter
+
+    @torch.no_grad()    
+    def __call__(self, layer_repr):
+        out = []
+        for l in layer_repr:
+            cin = l.shape[-1]
+            weight = torch.zeros(cin, cin, len(self.filter))
+            weight[range(cin),range(cin),:] = self.filter
+            out.append(F.conv1d(l.transpose(1,2), weight).transpose(1,2))
+        return out
 
 
 class PCAt(Transform):
@@ -107,6 +126,7 @@ class PCAt(Transform):
         self.pcas = pcas
         self.fit = fit
 
+    @torch.no_grad()
     def __call__(self, layer_repr):
         out = []
         for idx, l in enumerate(layer_repr):
