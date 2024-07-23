@@ -15,6 +15,14 @@ def layer_repr():
 
 
 @pytest.fixture
+def pca_layer_repr():
+    layers = []
+    for l in range(13):
+        layers.append(torch.randn(120, 20))
+    return layers
+
+
+@pytest.fixture
 def word2idx():
     return [
         [7] * 5 + [6] * 8 + [5] * 3 + [4] * 2 + [3] * 10 + [2] * 1 + [1] * 4 + [0] * 2,
@@ -62,10 +70,12 @@ def test_wordavg(layer_repr, word2idx):
         assert len(wi) == 35
     wordavg = transforms.WordAvg(word2idx)
     rproc = wordavg(layer_repr)
+    # most words in a sentence 
+    maxed = max(max(w) for w in word2idx)
     assert len(rproc) == 13
     for idx, l in enumerate(rproc):
         assert l.shape[0] == 4
-        assert l.shape[1] == torch.max(torch.LongTensor(word2idx[idx])).item() + 1
+        assert l.shape[1] == maxed + 1
         assert l.shape[2] == 20
 
 
@@ -103,17 +113,12 @@ def test_convolve(layer_repr, filter):
 def test_compose(layer_repr): ...
 
 
-def test_pcat(pcas, layer_repr):
+def test_pcat(pcas, pca_layer_repr):
     pcat = transforms.PCAt(pcas, fit=True)
 
-    # average across the token dimension firrst
-    lhs = []
-    for idx in range(len(layer_repr)):
-        lhs.append(torch.mean(layer_repr[idx], dim=1))
-    assert len(lhs) == 13
-    pcaed = pcat(lhs)    
+    assert len(pca_layer_repr) == 13
+    pcaed = pcat(pca_layer_repr)    
     assert len(pcaed) == 13
     for idx, l in enumerate(pcaed):
-        print(l.shape)
-        assert l.shape[0] == 4
+        assert l.shape[0] == 120
         assert l.shape[1] == pcas[idx].n_components

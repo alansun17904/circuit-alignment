@@ -57,7 +57,6 @@ class WordAvg(Transform):
     @torch.no_grad()
     def __call__(self, layer_repr):
         out = []
-
         for l in layer_repr:
             ls = torch.zeros(l.shape[0], self.mwords, l.shape[2])
             for i, b in enumerate(l):
@@ -66,15 +65,16 @@ class WordAvg(Transform):
         return out
 
     def _avg_single(self, repr: torch.Tensor, w2i: torch.LongTensor):
-        _, counts = torch.unique(w2i, return_counts=True, dim=0)
-        idxs = torch.cumsum(counts)
+        _, counts = torch.unique(w2i, return_counts=True, dim=0)  # get the counts of each word
+        idxs = torch.cumsum(counts, dim=0)
+        print(idxs)
         nt = torch.zeros(self.mwords, repr.shape[1])
         words = len(nt) - 1
         for j in range(len(idxs)-1,-1,-1):
             start, end = idxs[j-1] if j - 1 >= 0 else 0, idxs[j]
-            nt[words] = torch.mean(repr[:,start:end,:], dim=1)
+            nt[words] = torch.mean(repr[start:end,:], dim=0)
             words -= 1
-        nt[:words] = torch.mean(nt[words:], dim=0)
+        nt[:words+1] = torch.mean(nt[words:], dim=0)
         return nt
 
 
