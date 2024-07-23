@@ -19,8 +19,8 @@ def r2r_score(pred, actual):
 
 def ridge(x, y, lam):
     nfeats = x.shape[1]
-    return torch.matmul(
-        tla.inv(torch.matmul(x.T, x) + lam * torch.eye(nfeats, device=x.device)),
+    return tla.lstsq(
+        torch.matmul(x.T, x) + lam * torch.eye(nfeats, device=x.device),
         torch.matmul(x.T, y),
     )
 
@@ -38,7 +38,7 @@ def cv_ridge(x_train, y_train, n_splits=5, lams=[1e-3, 1e-4, 1e-5]):
     error = torch.zeros(len(lams), device=x_train.device)
     for f, (t_idx, v_idx) in enumerate(kf.split(y_train)):
         fx_train, fy_train = x_train[t_idx], y_train[t_idx]
-        fx_val, fy_val = x_train[t_idx], y_train[t_idx]
+        fx_val, fy_val = x_train[v_idx], y_train[v_idx]
         for l, lam in enumerate(lams):
             w = ridge(fx_train, fy_train, lam)
             error[l] += torch.sum(1 - r2_score(torch.matmul(fx_val, w), fy_val))
@@ -59,4 +59,4 @@ def cv_ridge_lam_per_target(x_train, y_train, n_splits=5, lams=[1e-3, 1e-4, 1e-5
         mask = min_lams == i
         if torch.any(mask):
             weights[:, mask] = ridge(x_train, y_train[:, mask], lams[i]).float()
-    return weights  # , np.array([lams[i] for i in min_lams])
+    return weights

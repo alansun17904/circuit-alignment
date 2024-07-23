@@ -1,8 +1,8 @@
 from typing import Union, List, Optional, Callable, Literal
 from jaxtyping import Int, Float
+import tqdm
 import torch
 import numpy as np
-
 import transformer_lens as tl
 import transformer_lens.utils as utils
 from transformer_lens.hook_points import (
@@ -19,7 +19,7 @@ from transformer_lens import (
 )
 from transformer_lens.utilities import devices
 from transformer_lens.past_key_value_caching import HookedTransformerKeyValueCache
-from rich.progress import track
+
 
 
 torch.set_grad_enabled(False)
@@ -93,14 +93,16 @@ class BrainAlignTransformer:
             )
             return logits, rpros(ac.values())
         tok_batch = tokens.chunk(len(tokens) // batch_size)
-        reprs, logits, layers = [], [], 0
-        for toks in track(tok_batch):
+        reprs, logits = [], []
+        for toks in tqdm.tqdm(tok_batch, total=len(tok_batch)):
             l, c = self.run_with_cache(
                 toks, decoder_input, names_filter=resid_name_filter
             )
+            c = c.to("cpu")
             layers = len(c)
-            logits.append(l)
-            reprs.append(rpros(c))
+            logits.append(l[:,-1,:].to("cpu"))
+            reprs.append(rpros(c.values()))
+            del l, c
         return torch.cat(logits), [
             torch.cat([b[i] for b in reprs]) for i in range(layers)
         ]

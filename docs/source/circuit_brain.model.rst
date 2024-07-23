@@ -1,9 +1,9 @@
 circuit\_brain.model 
 ============================
-circuit\_brain.model.BrainAlignedModel
+circuit\_brain.model.BrainAlignTransformer
 -----------------------------------------
 
-.. autoclass:: circuit_brain.model.hooked_model.BrainAlignedLMModel
+.. autoclass:: circuit_brain.model.hooked_model.BrainAlignTransformer
    :members:
    :special-members:
    

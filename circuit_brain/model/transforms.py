@@ -102,7 +102,7 @@ class ContextCrop(Transform):
     def __call__(self, layer_repr):
         out = []
         for l in layer_repr:
-            out.append(l[:, -self.window_size :, :])
+            out.append(l[:, -self.window_size:, :])
         return out
 
 

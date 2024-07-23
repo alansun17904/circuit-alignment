@@ -224,10 +224,9 @@ class HarryPotter(fMRIDataset):
             rois = self.subject_rois[subject_idx]
             # do not get the "all" region
             roi_measures = np.zeros((len(idxs), 8))
-            del rois["all"]
+            if "all" in rois:
+                del rois["all"]
             for i, (label, mask) in enumerate(rois.items()):
-                if label == "all":
-                    continue
                 # average across all voxels that are in the same region
                 roi_measures[:, i] = np.mean(measures[:, mask], axis=1)
 
@@ -235,5 +234,4 @@ class HarryPotter(fMRIDataset):
 
         # normalize each voxel/roi across time
         measures = (measures - np.mean(measures, axis=0)) / np.std(measures, axis=0)
-        print(type(self.toks))
-        return torch.Tensor(measures), torch.Tensor(self.toks)[idxs], torch.Tensor(self.idxmap)[idxs]
+        return torch.Tensor(measures), torch.LongTensor(self.toks)[idxs], torch.LongTensor(self.idxmap)[idxs]
