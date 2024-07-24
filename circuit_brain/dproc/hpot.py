@@ -32,7 +32,6 @@ class HarryPotter(fMRIDataset):
         self,
         ddir: str,
         context_size: int,
-        window_size: int,
         tokenizer: PreTrainedTokenizer,
         remove_format_chars: bool = False,
         remove_punc_spacing: bool = False,
@@ -46,9 +45,7 @@ class HarryPotter(fMRIDataset):
                 subdirectory structure and file naming follows
                 `here <https://drive.google.com/drive/folders/1Q6zVCAJtKuLOh-zWpkS3lH8LBvHcEOE8>`__.
             context_size: For a given fMRI measurement, the number of previous tokens that we use
-                to compute a given window (see `window_size` below).
-            window_size: For a given fMRI measurement, the number of previous words
-                that are assumed to be a part of this fMRI's context.
+                to compute a given window.
             tokenizer: a HuggingFace tokenizer
             remove_format_chars: Whether or not to remove the special formatting
                 characters that were displayed to participants such as `@` and `+`.
@@ -62,7 +59,6 @@ class HarryPotter(fMRIDataset):
             with language processing.
         """
         self.context_size = context_size
-        self.window_size = window_size
         self.ddir = Path(ddir)
         self.fmri_dir = self.ddir / "fMRI"
         self.voxel_n = self.ddir / "voxel_neighborhoods"
@@ -184,7 +180,7 @@ class HarryPotter(fMRIDataset):
 
         Yields:
             A tuple of the index of the current fold, (for both training and testing folds)
-            normalized fMRI measurements within fold for each of the points of interest in the 
+            normalized fMRI measurements within fold for each of the points of interest in the
             fold as well as the tokens associated with each of these measurements. The last entry
             in each of these pairs is the mapping between words and token indices.
 
@@ -234,4 +230,8 @@ class HarryPotter(fMRIDataset):
 
         # normalize each voxel/roi across time
         measures = (measures - np.mean(measures, axis=0)) / np.std(measures, axis=0)
-        return torch.Tensor(measures), torch.LongTensor(self.toks)[idxs], torch.LongTensor(self.idxmap)[idxs]
+        return (
+            torch.Tensor(measures),
+            torch.LongTensor(self.toks)[idxs],
+            torch.LongTensor(self.idxmap)[idxs],
+        )

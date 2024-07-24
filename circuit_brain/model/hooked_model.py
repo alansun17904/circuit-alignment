@@ -21,7 +21,6 @@ from transformer_lens.utilities import devices
 from transformer_lens.past_key_value_caching import HookedTransformerKeyValueCache
 
 
-
 torch.set_grad_enabled(False)
 
 
@@ -59,12 +58,15 @@ class BrainAlignTransformer:
             return self.ht.run_with_cache(tokens, decoder_input, **kwargs)
         return self.ht.run_with_cache(tokens, **kwargs)
 
+    @torch.no_grad()
     def resid_post(
         self,
         tokens: torch.LongTensor,
         decoder_input: Optional[torch.LongTensor] = None,
         batch_size: Optional[int] = None,
-        rpros: Optional[Callable] = None,
+        rpre: Optional[Callable] = lambda x: x,
+        rpost: Optional[Callable] = lambda x: x,
+        verbose=True,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Gets the hidden representations of `tokens` in the model at every layer. For
         a transformer model, we define each layer as after the residuals have been added
@@ -76,37 +78,37 @@ class BrainAlignTransformer:
             decoder_inputs: Indices of the decoder sequence tokens. This is required if the model
                 uses an encoder-decoder architecture (T5).
             batch_size: The number of examples per-batch during inference
-            rpros: A function that takes in the hidden representations from all of the layers
-                and performs post-processing.
+            rpre: A function that takes in the hidden representations from all of the layers
+                and performs post-processing after each batch.
+            rpost: A function that takes in the hidden representations from all of the layers
+                and performs post-processing after all batches.
         Return:
             A tuple where the first entry is the logits of the model and the second entry is
             a torch tensor that has dimension ``layers x [num_examples, d_model]`` where
-            ``d_model`` is the dimension of the embeddings. If ``rpros`` is specified, then
+            ``d_model`` is the dimension of the embeddings. If ``rpre`` or ``rpost`` is specified, then
             this is called on all of the hidden layers (by-batch) before being returned.
         """
         resid_name_filter = lambda name: name.endswith("hook_resid_post")
-        if rpros is None:
-            rpros = lambda x: x  # identity function
         if batch_size is None:
             logits, ac = self.run_with_cache(
                 tokens, decoder_input, names_filter=resid_name_filter
             )
             ac = ac.to("cpu")
-            return logits[:,-1,:].to("cpu"), rpros(ac.values())
+            return logits[:, -1, :].to("cpu"), rpost(rpre(list(ac.values())))
         tok_batch = tokens.chunk(len(tokens) // batch_size)
         reprs, logits = [], []
-        for toks in tqdm.tqdm(tok_batch, total=len(tok_batch)):
+        for toks in tqdm.tqdm(tok_batch, total=len(tok_batch), disabled=not verbose):
             l, c = self.run_with_cache(
                 toks, decoder_input, names_filter=resid_name_filter
             )
             c = c.to("cpu")
             layers = len(c)
-            logits.append(l[:,-1,:].to("cpu"))
-            reprs.append(rpros(c.values()))
+            logits.append(l[:, -1, :].to("cpu"))
+            reprs.append(rpre(list(c.values())))
             del l, c
-        return torch.cat(logits), [
-            torch.cat([b[i] for b in reprs]) for i in range(layers)
-        ]
+        return torch.cat(logits), rpost(
+            [torch.cat([b[i] for b in reprs]) for i in range(layers)]
+        )
 
     def generate(
         self,
@@ -257,7 +259,7 @@ class BrainAlignTransformer:
                             padding_side=padding_side,
                             past_kv_cache=past_kv_cache,
                         )
-                        aggregated_logits[:,ctx_length+index,:] = logits[:,-1,:]
+                        aggregated_logits[:, ctx_length + index, :] = logits[:, -1, :]
                     else:
                         logits = self.ht.forward(
                             tokens,
@@ -266,7 +268,7 @@ class BrainAlignTransformer:
                             padding_side=padding_side,
                             past_kv_cache=past_kv_cache,
                         )
-                        aggregated_logits[:,:ctx_length,:] = logits
+                        aggregated_logits[:, :ctx_length, :] = logits
                 else:
                     # We input the entire sequence, as a [batch, pos] tensor, since we aren't using
                     # the cache.

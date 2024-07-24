@@ -49,10 +49,13 @@ class Normalize(Transform):
 
 
 class WordAvg(Transform):
-    def __init__(self, word2idx):
+    def __init__(self, word2idx, truncation=None):
         self.word2idx = torch.LongTensor(word2idx)
         # get the maximum number of words
-        self.mwords = torch.max(self.word2idx).item() + 1
+        if truncation is None:
+            self.mwords = torch.max(self.word2idx).item() + 1
+        else:
+            self.mwords = truncation
 
     @torch.no_grad()
     def __call__(self, layer_repr):
@@ -65,15 +68,19 @@ class WordAvg(Transform):
         return out
 
     def _avg_single(self, repr: torch.Tensor, w2i: torch.LongTensor):
-        _, counts = torch.unique(w2i, return_counts=True, dim=0)  # get the counts of each word
+        _, counts = torch.unique(
+            w2i, return_counts=True, dim=0
+        )  # get the counts of each word
         idxs = torch.cumsum(counts, dim=0)
         nt = torch.zeros(self.mwords, repr.shape[1])
         words = len(nt) - 1
-        for j in range(len(idxs)-1,-1,-1):
-            start, end = idxs[j-1] if j - 1 >= 0 else 0, idxs[j]
-            nt[words] = torch.mean(repr[start:end,:], dim=0)
+        for j in range(len(idxs) - 1, -1, -1):
+            start, end = idxs[j - 1] if j - 1 >= 0 else 0, idxs[j]
+            nt[words] = torch.mean(repr[start:end, :], dim=0)
             words -= 1
-        nt[:words+1] = torch.mean(nt[words:], dim=0)
+            if words == -1:
+                return nt
+        nt[: words + 1] = torch.mean(nt[words:], dim=0)
         return nt
 
 
@@ -101,7 +108,7 @@ class ContextCrop(Transform):
     def __call__(self, layer_repr):
         out = []
         for l in layer_repr:
-            out.append(l[:, -self.window_size:, :])
+            out.append(l[:, -self.window_size :, :])
         return out
 
 
@@ -109,14 +116,14 @@ class ConvolveHRF(Transform):
     def __init__(self, filter: torch.Tensor):
         self.filter = filter
 
-    @torch.no_grad()    
+    @torch.no_grad()
     def __call__(self, layer_repr):
         out = []
         for l in layer_repr:
             cin = l.shape[-1]
             weight = torch.zeros(cin, cin, len(self.filter))
-            weight[range(cin),range(cin),:] = self.filter
-            out.append(F.conv1d(l.transpose(1,2), weight).transpose(1,2))
+            weight[range(cin), range(cin), :] = self.filter
+            out.append(F.conv1d(l.transpose(1, 2), weight).transpose(1, 2))
         return out
 
 

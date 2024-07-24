@@ -1,5 +1,6 @@
 circuit\_brain.model 
 ============================
+
 circuit\_brain.model.BrainAlignTransformer
 -----------------------------------------
 
@@ -7,6 +8,14 @@ circuit\_brain.model.BrainAlignTransformer
    :members:
    :special-members:
    
+
+circuit\_brain.model.transforms
+---------------------------------
+.. automodule:: circuit_brain.model.transforms
+   :members:
+   :show-inheritance:
+   :special-members:
+
 
 circuit\_brain.model.patching
 ------------------------------------

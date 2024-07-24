@@ -9,9 +9,6 @@ def get_dataset(dataset_id, ddir, *args, **kwargs):
     dataset.
     """
     if dataset_id == "hp":
-        assert (
-            kwargs.get("window_size", None) is not None
-        ), "Must provide window size for Harry Potter dataset!"
         kwargs["remove_format_chars"] = kwargs.get("remove_format_chars", False)
         kwargs["remove_punc_spacing"] = kwargs.get("remove_punc_spacing", False)
         return HarryPotter(ddir, *args, **kwargs)

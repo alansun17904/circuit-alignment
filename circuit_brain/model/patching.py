@@ -1,7 +1,7 @@
 from __future__ import annotations
-import itertools
 from functools import partial
-from typing import Callable, Optional, Sequence, Tuple, Union, overload
+import itertools
+from typing import Callable, Optional, Sequence, Tuple, Union, Sequence
 
 import einops
 import pandas as pd
@@ -15,13 +15,10 @@ from transformer_lens.ActivationCache import ActivationCache
 from transformer_lens.HookedTransformer import HookedTransformer
 
 
-# %%
 Logits = torch.Tensor
 AxisNames = Literal["layer", "pos", "head_index", "head", "src_pos", "dest_pos"]
-
-
-# %%
-from typing import Sequence
+CorruptedActivation = torch.Tensor
+PatchedActivation = torch.Tensor
 
 
 def make_df_from_ranges(
@@ -37,49 +34,6 @@ def make_df_from_ranges(
     )
     df = pd.DataFrame(rows, columns=column_names)
     return df
-
-
-# %%
-CorruptedActivation = torch.Tensor
-PatchedActivation = torch.Tensor
-
-
-@overload
-def generic_activation_patch(
-    model: HookedTransformer,
-    corrupted_tokens: Int[torch.Tensor, "batch pos"],
-    clean_cache: ActivationCache,
-    patching_metric: Callable[
-        [Float[torch.Tensor, "batch pos d_vocab"]], Float[torch.Tensor, ""]
-    ],
-    patch_setter: Callable[
-        [CorruptedActivation, Sequence[int], ActivationCache], PatchedActivation
-    ],
-    activation_name: str,
-    index_axis_names: Optional[Sequence[AxisNames]] = None,
-    index_df: Optional[pd.DataFrame] = None,
-    return_index_df: Literal[False] = False,
-    batch_size: int = 64,
-) -> torch.Tensor: ...
-
-
-@overload
-def generic_activation_patch(
-    model: HookedTransformer,
-    corrupted_tokens: Int[torch.Tensor, "batch pos"],
-    clean_cache: ActivationCache,
-    patching_metric: Callable[
-        [Float[torch.Tensor, "batch pos d_vocab"]], Float[torch.Tensor, ""]
-    ],
-    patch_setter: Callable[
-        [CorruptedActivation, Sequence[int], ActivationCache], PatchedActivation
-    ],
-    activation_name: str,
-    index_axis_names: Optional[Sequence[AxisNames]],
-    index_df: Optional[pd.DataFrame],
-    return_index_df: Literal[True],
-    batch_size: int = 64,
-) -> Tuple[torch.Tensor, pd.DataFrame]: ...
 
 
 def generic_activation_patch(
@@ -660,9 +614,7 @@ def attn_head_all_pos_every(
     """
     act_patch_results: list[torch.Tensor] = []
     act_patch_results.append(
-        attn_head_out_all_pos(
-            model, corrupted_tokens, clean_cache, metric
-        )
+        attn_head_out_all_pos(model, corrupted_tokens, clean_cache, metric)
     )
     act_patch_results.append(
         attn_head_q_all_pos(
@@ -749,18 +701,12 @@ def block_every(
     """
     act_patch_results = []
     act_patch_results.append(
-        resid_pre(
-            model, corrupted_tokens, clean_cache, metric, batch_size=batch_size
-        )
+        resid_pre(model, corrupted_tokens, clean_cache, metric, batch_size=batch_size)
     )
     act_patch_results.append(
-        attn_out(
-            model, corrupted_tokens, clean_cache, metric, batch_size=batch_size
-        )
+        attn_out(model, corrupted_tokens, clean_cache, metric, batch_size=batch_size)
     )
     act_patch_results.append(
-        mlp_out(
-            model, corrupted_tokens, clean_cache, metric, batch_size=batch_size
-        )
+        mlp_out(model, corrupted_tokens, clean_cache, metric, batch_size=batch_size)
     )
     return torch.stack(act_patch_results, dim=0)

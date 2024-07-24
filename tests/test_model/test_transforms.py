@@ -34,7 +34,12 @@ def word2idx():
 
 @pytest.fixture
 def filter():
-    return torch.ones(35,) / 35
+    return (
+        torch.ones(
+            35,
+        )
+        / 35
+    )
 
 
 @pytest.fixture
@@ -70,7 +75,7 @@ def test_wordavg(layer_repr, word2idx):
         assert len(wi) == 35
     wordavg = transforms.WordAvg(word2idx)
     rproc = wordavg(layer_repr)
-    # most words in a sentence 
+    # most words in a sentence
     maxed = max(max(w) for w in word2idx)
     assert len(rproc) == 13
     for idx, l in enumerate(rproc):
@@ -117,7 +122,7 @@ def test_pcat(pcas, pca_layer_repr):
     pcat = transforms.PCAt(pcas, fit=True)
 
     assert len(pca_layer_repr) == 13
-    pcaed = pcat(pca_layer_repr)    
+    pcaed = pcat(pca_layer_repr)
     assert len(pcaed) == 13
     for idx, l in enumerate(pcaed):
         assert l.shape[0] == 120
