@@ -12,7 +12,7 @@ from circuit_brain.model import BrainAlignTransformer
 
 import tqdm
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 from transformers import AutoTokenizer
 from transformer_lens import ActivationCache
 import transformer_lens.utils as tlutils
@@ -25,6 +25,17 @@ PatchDir = Literal["noising", "denoising"]
 
 
 torch.set_grad_enabled(False)
+
+class Toks(Dataset):
+    def __init__(self, src, des):
+        self.src = src
+        self.des = des
+    
+    def __len__(self):
+        return self.src.shape[0]
+    
+    def __getitem__(self, idx):
+        return self.src[idx], self.des[idx]
 
 
 def make_attn_head_hooks(heads: List[HeadIndex], clean: ActivationCache, htype="z"):
@@ -53,30 +64,28 @@ def attn_head_setter(corrupted, hook, index, clean):
 def run_with_patch(
     m: BrainAlignTransformer,
     heads: List[HeadIndex],
-    corr_toks: torch.LongTensor,
-    clean_toks: torch.LongTensor,
+    toks: Toks,
     batch_size: int,
     htype: HeadType = "z",
-    pdir: PatchDir = "denoising",
-    logits_only=True,
+    logits_only:bool=True,
     clean_cache: Optional[ActivationCache] = None,
     rpre: Optional[Callable] = lambda x: x,
     rpost: Optional[Callable] = lambda x: x,
+    cache: List=None
 ):
     # only cache the activations of the components that we are patching
     layers = m.ht.cfg.n_layers
-    comp_names = [tlutils.get_act_name(f"{htype}{h[0]}") for h in heads]
+    comp_names = {tlutils.get_act_name(f"{htype}{h[0]}") for h in heads}
     names_filter = lambda x: x in comp_names
-    n_examples = corr_toks.shape[0]
-    batch_idxs = torch.arange(n_examples).chunk(math.ceil(n_examples / batch_size))
-    logits, reprs = [], []
-    for batch in batch_idxs:
-        src = clean_toks[batch] if pdir == "denoising" else corr_toks[batch]
-        des = corr_toks[batch] if pdir == "denoising" else clean_toks[batch]
+    logits, reprs, src_caches = [], [], []
+    dl = DataLoader(toks, batch_size=batch_size)
+    for i, (src, des) in enumerate(dl):
         if clean_cache is None:
             _, src_cache = m.ht.run_with_cache(src, names_filter=names_filter)
+            if cache is not None:
+                cache.append(src_cache.to("cpu"))
         else:
-            src_cache = clean_cache
+            src_cache = clean_cache[i]
         hooks = make_attn_head_hooks(heads, src_cache, htype=htype)
         with m.ht.hooks(fwd_hooks=hooks):
             logits.append(m.ht(des)[:, -1, :].to("cpu"))
@@ -86,19 +95,22 @@ def run_with_patch(
     logits = torch.cat(logits)
     if logits_only:
         return logits
+    
     return logits, rpost([torch.cat([b[i] for b in reprs]) for i in range(layers)])
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument("model_name", type=str)
-parser.add_argument("tok_name", type=str, help="id of tokenizer")
-parser.add_argument("ofname", type=str, help="name of output file")
-parser.add_argument("--batch_size", type=int, default=1024)
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("model_name", type=str)
+    parser.add_argument("tok_name", type=str, help="id of tokenizer")
+    parser.add_argument("ofname", type=str, help="name of output file")
+    parser.add_argument("--batch_size", type=int, default=512)
 
-opts = parser.parse_args()
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
+    opts = parse_args()
     m = BrainAlignTransformer.from_pretrained(opts.model_name)
     atok = AutoTokenizer.from_pretrained(opts.tok_name)
     rpre = transforms.Compose(
@@ -129,39 +141,53 @@ if __name__ == "__main__":
 
     for sidx in range(len(hp)):
         head_scores = dict()
-        for head in tqdm.tqdm(heads, desc=f"Patching subj{sidx+1}"):
+        train_caches = []
+        test_caches = []
+        for j, head in tqdm.tqdm(enumerate(heads), desc=f"Patching subj{sidx+1}", total=len(heads)):
             plato_idxs = torch.randperm(len(plato))
             ds_generator = hp.kfold(sidx, 5, 10)
             fold_scores = torch.zeros(5, m.ht.cfg.n_layers)
             for k, test, train in ds_generator:
+                cache = None
+                if j % m.ht.cfg.n_heads == 0:
+                    train_cache = []
+                    test_cache = []
                 train_fmri, train_toks, _ = train
                 test_fmri, test_toks, _ = test
                 train_corr, test_corr = (
                     plato[plato_idxs[: len(train_fmri)]],
                     plato[plato_idxs[-len(test_fmri) :]],
                 )
+                train_dstok, test_dstok = Toks(train_toks, train_corr), Toks(test_toks, test_corr)
                 _, train_reprs = run_with_patch(
                     m,
                     [head],
-                    train_corr,
-                    train_toks,
+                    train_dstok,
                     opts.batch_size,
                     logits_only=False,
+                    clean_cache=None if (j % m.ht.cfg.n_heads == 0) else train_caches[k],
                     rpre=rpre,
+                    cache=train_cache,
                 )
                 _, test_reprs = run_with_patch(
                     m,
                     [head],
-                    test_corr,
-                    test_toks,
+                    test_dstok,
                     opts.batch_size,
+                    clean_cache=None if (j % m.ht.cfg.n_heads == 0) else test_caches[k],
                     logits_only=False,
                     rpre=rpre,
+                    cache=test_cache
                 )
+                if j % m.ht.cfg.n_heads == 0:
+                    train_caches.append(train_cache)
+                    test_caches.append(test_cache)
                 l2 = torch.zeros(m.ht.cfg.n_layers)
+                train_fmri = train_fmri.to("cuda")
+                test_fmri = test_fmri.to("cuda")
                 for l in range(head[0], m.ht.cfg.n_layers):
-                    ridge_cv.fit(train_reprs[l], train_fmri)
-                    l2[l] = torch.mean(ridge_cv.score(test_reprs[l], test_fmri)).item()
+                    ridge_cv.fit(train_reprs[l].to("cuda"), train_fmri)
+                    l2[l] = torch.mean(ridge_cv.score(test_reprs[l].to("cuda"), test_fmri)).item()
                 fold_scores[k] = l2
             head_scores[f"{head[0]}.{head[1]}"] = torch.mean(fold_scores, dim=0)
         pickle.dump(head_scores, open(f"{opts.ofname}-subj{sidx}.pkl", "wb"))
