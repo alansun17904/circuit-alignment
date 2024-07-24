@@ -7,6 +7,7 @@ from sklearn.linear_model import Ridge, RidgeCV
 
 
 def r2_score(pred, actual):
+    actual = actual.to(pred.device)
     ss_res = torch.mean((pred - actual) ** 2, dim=0)
     ss_tot = torch.var(actual, dim=0)
     return torch.nan_to_num(1 - ss_res / ss_tot)
@@ -19,17 +20,15 @@ def r2r_score(pred, actual):
 
 def ridge(x, y, lam):
     nfeats = x.shape[1]
-    return tla.lstsq(
-        torch.matmul(x.T, x) + lam * torch.eye(nfeats, device=x.device),
-        torch.matmul(x.T, y),
-    )
+    l = lam * torch.eye(nfeats, device=x.device)
+    return tla.lstsq(x.T @ x + l, x.T @ y).solution
 
 
 def ridge_lam_per_target(x, y, x_val, y_val, lams=[1e-4, 1e-3]):
     error = torch.zeros(len(lams), y.shape[1], device=y.device)
     for i, lam in enumerate(lams):
         weights = ridge(x, y, lam)
-        error[i] = 1 - r2_score(torch.matmul(x_val, weights), y_val)
+        error[i] = 1 - r2_score(x_val @ weights, y_val)
     return error
 
 
@@ -41,7 +40,7 @@ def cv_ridge(x_train, y_train, n_splits=5, lams=[1e-3, 1e-4, 1e-5]):
         fx_val, fy_val = x_train[v_idx], y_train[v_idx]
         for l, lam in enumerate(lams):
             w = ridge(fx_train, fy_train, lam)
-            error[l] += torch.sum(1 - r2_score(torch.matmul(fx_val, w), fy_val))
+            error[l] += torch.sum(1 - r2_score(fx_val @ w, fy_val))
     min_lam = torch.argmin(error)
     return ridge(x_train, y_train, lams[min_lam])
 

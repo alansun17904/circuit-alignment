@@ -67,7 +67,6 @@ class WordAvg(Transform):
     def _avg_single(self, repr: torch.Tensor, w2i: torch.LongTensor):
         _, counts = torch.unique(w2i, return_counts=True, dim=0)  # get the counts of each word
         idxs = torch.cumsum(counts, dim=0)
-        print(idxs)
         nt = torch.zeros(self.mwords, repr.shape[1])
         words = len(nt) - 1
         for j in range(len(idxs)-1,-1,-1):

@@ -1,4 +1,4 @@
-from typing import Union, List, Optional, Callable, Literal
+from typing import Union, List, Optional, Callable, Literal, Tuple
 from jaxtyping import Int, Float
 import tqdm
 import torch
@@ -65,7 +65,7 @@ class BrainAlignTransformer:
         decoder_input: Optional[torch.LongTensor] = None,
         batch_size: Optional[int] = None,
         rpros: Optional[Callable] = None,
-    ):
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Gets the hidden representations of `tokens` in the model at every layer. For
         a transformer model, we define each layer as after the residuals have been added
         to the MLP outputs.
@@ -91,7 +91,8 @@ class BrainAlignTransformer:
             logits, ac = self.run_with_cache(
                 tokens, decoder_input, names_filter=resid_name_filter
             )
-            return logits, rpros(ac.values())
+            ac = ac.to("cpu")
+            return logits[:,-1,:].to("cpu"), rpros(ac.values())
         tok_batch = tokens.chunk(len(tokens) // batch_size)
         reprs, logits = [], []
         for toks in tqdm.tqdm(tok_batch, total=len(tok_batch)):
