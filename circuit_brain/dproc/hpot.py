@@ -27,6 +27,7 @@ class HarryPotter(fMRIDataset):
 
     dataset_id = "hp"
     subject_idxs = ["F", "H", "I", "J", "K", "L", "M", "N"]
+    rois = ["PostTemp", "AntTemp", "AngularG", "IFG", "MFG", "IFGorb", "pCingulate", "dmpfc"]
 
     def __init__(
         self,
@@ -36,6 +37,7 @@ class HarryPotter(fMRIDataset):
         remove_format_chars: bool = False,
         remove_punc_spacing: bool = False,
         pool_rois: bool = True,
+        words: List[str] = None,
     ):
         """Initializes the dataset. This method should not be called directly. Instead,
         one should use the factory method in the `fMRIDataset` class.
@@ -75,7 +77,7 @@ class HarryPotter(fMRIDataset):
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
         # load metadata
-        self.words = np.load(self.fmri_dir / "words_fmri.npy")
+        self.words = np.load(self.fmri_dir / "words_fmri.npy") if words is None else words
         self.word_timing = np.load(self.fmri_dir / "time_words_fmri.npy")
         self.fmri_timing = np.load(self.fmri_dir / "time_fmri.npy")
         runs = np.load(self.fmri_dir / "runs_fmri.npy")
@@ -229,7 +231,7 @@ class HarryPotter(fMRIDataset):
             measures = roi_measures
 
         # normalize each voxel/roi across time
-        measures = (measures - np.mean(measures, axis=0)) / np.std(measures, axis=0)
+        # measures = (measures - np.mean(measures, axis=0)) / np.std(measures, axis=0)
         return (
             torch.Tensor(measures),
             torch.LongTensor(self.toks)[idxs],

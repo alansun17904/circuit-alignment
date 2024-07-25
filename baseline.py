@@ -1,3 +1,4 @@
+import math
 import pickle
 import argparse
 
@@ -8,6 +9,7 @@ from circuit_brain.model import transforms
 
 import tqdm
 import torch
+import numpy as np
 from transformers import AutoTokenizer
 
 
@@ -24,12 +26,16 @@ parser.add_argument(
 parser.add_argument(
     "--rps", default=True, action="store_true", help="remove punctuation spacing"
 )
+parser.add_argument(
+    "--text-type", choices=["norm", "plato", "randtok", "poa"]
+)
 opts = parser.parse_args()
 
 
 if __name__ == "__main__":
     m = BrainAlignTransformer.from_pretrained(opts.model_name)
     atok = AutoTokenizer.from_pretrained(opts.tok_name)
+    poa = np.load("data/HP_data/fMRI/prisoner-of-ask.npy")
     print("Initializing dataset...")
     hp = fMRIDataset.get_dataset(
         "hp",
@@ -39,7 +45,20 @@ if __name__ == "__main__":
         remove_format_chars=opts.rfc,
         remove_punc_spacing=opts.rps,
         pool_rois=True,
+        words=poa if opts.choice == "poa" else None,
     )
+    if opts.choice == "plato":
+    # get plato's republic instead and replace the contexts
+        plato = torch.LongTensor(
+            atok(" ".join(open("data/related_texts/the-republic.txt", "r").read().split()))[
+                "input_ids"
+            ]
+        )
+        plato = torch.stack(plato.chunk(math.ceil(len(plato) / 128))[:-1]).repeat(2,1)
+        hp.toks = plato
+    if opts.choice == "randtok":
+        ran = torch.randint(0, m.ht.cfg.d_vocab, (len(hp.toks), 128))
+        hp.toks = ran
     print("Dataset pre-processed!")
     ridge_cv = utils.RidgeCV(n_splits=5)
     gen_rpre = lambda w: transforms.Compose(
@@ -71,7 +90,6 @@ if __name__ == "__main__":
             test_reprs=test_reprs,
         )
         subjs.append(sscores)
-
     pickle.dump(
         subjs,
         open(f"{opts.ofname}", "wb+"),

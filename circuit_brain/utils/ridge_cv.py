@@ -10,7 +10,7 @@ class RidgeCV:
         self,
         lam_per_target=True,
         n_splits=10,
-        lams=[10**i for i in range(-5, 10)],
+        lams=[10**i for i in range(-6, 10)],
         device="cuda",
     ):
         assert device in ["cpu", "cuda"], "Device must be either 'cpu' or 'cuda'."
@@ -50,4 +50,4 @@ class RidgeCV:
     def score(self, x, y):
         if self.device != "cpu":
             y = y.to(x.device)
-        return self.mean(self.r2_score(self.predict(x), y))
+        return self.r2_score(self.predict(x), y)

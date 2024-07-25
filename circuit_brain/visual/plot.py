@@ -24,7 +24,7 @@ def heatmap(
     """
     im = ax.imshow(matrix, cmap=cmap)
     valfunc = valfunc if valfunc is not None else lambda x: x
-    colorfunc = colorfunc is colorfunc if not None else lambda x: "black"
+    colorfunc = colorfunc if colorfunc is not None else lambda x: "black"
     for i in range(len(matrix)):
         for j in range(len(matrix[i])):
             val = matrix[i, j]

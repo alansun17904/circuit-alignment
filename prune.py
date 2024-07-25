@@ -77,7 +77,7 @@ def run_with_patch(
     layers = m.ht.cfg.n_layers
     comp_names = {tlutils.get_act_name(f"{htype}{h[0]}") for h in heads}
     names_filter = lambda x: x in comp_names
-    logits, reprs, src_caches = [], [], []
+    logits, reprs = [], []
     dl = DataLoader(toks, batch_size=batch_size)
     for i, (src, des) in enumerate(dl):
         if clean_cache is None:
@@ -88,14 +88,13 @@ def run_with_patch(
             src_cache = clean_cache[i]
         hooks = make_attn_head_hooks(heads, src_cache, htype=htype)
         with m.ht.hooks(fwd_hooks=hooks):
-            logits.append(m.ht(des)[:, -1, :].to("cpu"))
+            #logits.append(m.ht(des)[:, -1, :].to("cpu"))
             if not logits_only:
                 _, c = m.resid_post(des, rpre=rpre, verbose=False)
                 reprs.append(c)
-    logits = torch.cat(logits)
+    #logits = torch.cat(logits)
     if logits_only:
         return logits
-    
     return logits, rpost([torch.cat([b[i] for b in reprs]) for i in range(layers)])
 
 
@@ -104,7 +103,7 @@ def parse_args():
     parser.add_argument("model_name", type=str)
     parser.add_argument("tok_name", type=str, help="id of tokenizer")
     parser.add_argument("ofname", type=str, help="name of output file")
-    parser.add_argument("--batch_size", type=int, default=512)
+    parser.add_argument("--batch_size", type=int, default=128)
 
     return parser.parse_args()
 
@@ -128,6 +127,7 @@ if __name__ == "__main__":
         remove_punc_spacing=True,
         pool_rois=True,
     )
+    N_HEADS = m.ht.cfg.n_heads
     plato = torch.LongTensor(
         atok(" ".join(open("data/related_texts/the-republic.txt", "r").read().split()))[
             "input_ids"
@@ -135,23 +135,20 @@ if __name__ == "__main__":
     )
     plato = torch.stack(plato.chunk(math.ceil(len(plato) / 128))[:-1])
     ridge_cv = utils.RidgeCV(n_splits=5)
-    heads = list(itertools.product(range(m.ht.cfg.n_layers), range(m.ht.cfg.n_heads)))
+    heads = list(itertools.product(range(m.ht.cfg.n_layers), range(N_HEADS)))
 
     print(f"Patching {len(heads)} heads.")
 
     for sidx in range(len(hp)):
         head_scores = dict()
-        train_caches = []
-        test_caches = []
-        for j, head in tqdm.tqdm(enumerate(heads), desc=f"Patching subj{sidx+1}", total=len(heads)):
+        for j, head in tqdm.tqdm(enumerate(heads), desc=f"Patching subj-{sidx+1}", total=len(heads)):
             plato_idxs = torch.randperm(len(plato))
             ds_generator = hp.kfold(sidx, 5, 10)
             fold_scores = torch.zeros(5, m.ht.cfg.n_layers)
+            if j % N_HEADS == 0:
+                train_caches, test_caches = [], []
             for k, test, train in ds_generator:
-                cache = None
-                if j % m.ht.cfg.n_heads == 0:
-                    train_cache = []
-                    test_cache = []
+                tr_cache, tt_cache = [], []
                 train_fmri, train_toks, _ = train
                 test_fmri, test_toks, _ = test
                 train_corr, test_corr = (
@@ -165,23 +162,23 @@ if __name__ == "__main__":
                     train_dstok,
                     opts.batch_size,
                     logits_only=False,
-                    clean_cache=None if (j % m.ht.cfg.n_heads == 0) else train_caches[k],
+                    clean_cache=None if (j % N_HEADS == 0) else train_caches[k],
                     rpre=rpre,
-                    cache=train_cache,
+                    cache=tr_cache,
                 )
                 _, test_reprs = run_with_patch(
                     m,
                     [head],
                     test_dstok,
                     opts.batch_size,
-                    clean_cache=None if (j % m.ht.cfg.n_heads == 0) else test_caches[k],
+                    clean_cache=None if (j % N_HEADS == 0) else test_caches[k],
                     logits_only=False,
                     rpre=rpre,
-                    cache=test_cache
+                    cache=tt_cache
                 )
-                if j % m.ht.cfg.n_heads == 0:
-                    train_caches.append(train_cache)
-                    test_caches.append(test_cache)
+                if j % N_HEADS == 0:
+                    train_caches.append(tr_cache)
+                    test_caches.append(tt_cache)
                 l2 = torch.zeros(m.ht.cfg.n_layers)
                 train_fmri = train_fmri.to("cuda")
                 test_fmri = test_fmri.to("cuda")

@@ -17,11 +17,24 @@ from transformer_lens import (
     FactoredMatrix,
     ActivationCache,
 )
+from torch.utils.data import DataLoader, Dataset
 from transformer_lens.utilities import devices
 from transformer_lens.past_key_value_caching import HookedTransformerKeyValueCache
 
 
 torch.set_grad_enabled(False)
+
+
+class Toks(Dataset):
+    def __init__(self, toks):
+        self.toks = toks
+    
+    def __len__(self):
+        return len(self.toks)
+    
+    def __getitem__(self, idx):
+        return self.toks[idx]
+
 
 
 class BrainAlignTransformer:
@@ -58,7 +71,7 @@ class BrainAlignTransformer:
             return self.ht.run_with_cache(tokens, decoder_input, **kwargs)
         return self.ht.run_with_cache(tokens, **kwargs)
 
-    @torch.no_grad()
+    @torch.inference_mode
     def resid_post(
         self,
         tokens: torch.LongTensor,
@@ -90,26 +103,22 @@ class BrainAlignTransformer:
         """
         resid_name_filter = lambda name: name.endswith("hook_resid_post")
         if batch_size is None:
-            logits, ac = self.run_with_cache(
+            _, ac = self.run_with_cache(
                 tokens, decoder_input, names_filter=resid_name_filter
             )
-            ac = ac.to("cpu")
-            return logits[:, -1, :].to("cpu"), rpost(rpre(list(ac.values())))
-        tok_batch = tokens.chunk(len(tokens) // batch_size)
+            return [], [v.to("cpu") for v in rpost(rpre(list(c.values())))]
+        dl = DataLoader(Toks(tokens), batch_size=batch_size, shuffle=False, pin_memory=True)
         reprs, logits = [], []
-        for toks in tqdm.tqdm(tok_batch, total=len(tok_batch), disabled=not verbose):
-            l, c = self.run_with_cache(
+        for toks in tqdm.tqdm(dl, disable=not verbose):
+            _, c = self.run_with_cache(
                 toks, decoder_input, names_filter=resid_name_filter
             )
-            c = c.to("cpu")
-            layers = len(c)
-            logits.append(l[:, -1, :].to("cpu"))
-            reprs.append(rpre(list(c.values())))
-            del l, c
-        return torch.cat(logits), rpost(
-            [torch.cat([b[i] for b in reprs]) for i in range(layers)]
+            reprs.append([v.to("cpu") for v in rpre(list(c.values()))])
+        return logits, rpost(
+            [torch.cat([b[i] for b in reprs]) for i in range(self.ht.cfg.n_layers)]
         )
 
+    @torch.inference_mode
     def generate(
         self,
         input: Union[str, Float[torch.Tensor, "batch pos"]] = "",
