@@ -231,7 +231,7 @@ class HarryPotter(fMRIDataset):
             measures = roi_measures
 
         # normalize each voxel/roi across time
-        # measures = (measures - np.mean(measures, axis=0)) / np.std(measures, axis=0)
+        measures = (measures - np.mean(measures, axis=0)) / np.std(measures, axis=0)
         return (
             torch.Tensor(measures),
             torch.LongTensor(self.toks)[idxs],

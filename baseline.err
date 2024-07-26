@@ -1,0 +1,163 @@
+
+CondaError: Run 'conda init' before 'conda activate'
+
+Traceback (most recent call last):
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/baseline.py", line 5, in <module>
+    import circuit_brain.utils as utils
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/__init__.py", line 1, in <module>
+    from .ridge_cv import RidgeCV
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_cv.py", line 4, in <module>
+    import circuit_brain.utils.ridge_torch_utils as rtu
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_torch_utils.py", line 5, in <module>
+    from sklearn.model_selection import KFold
+ModuleNotFoundError: No module named 'sklearn'
+Traceback (most recent call last):
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/baseline.py", line 5, in <module>
+    import circuit_brain.utils as utils
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/__init__.py", line 1, in <module>
+    from .ridge_cv import RidgeCV
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_cv.py", line 4, in <module>
+    import circuit_brain.utils.ridge_torch_utils as rtu
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_torch_utils.py", line 5, in <module>
+    from sklearn.model_selection import KFold
+ModuleNotFoundError: No module named 'sklearn'
+Traceback (most recent call last):
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/baseline.py", line 5, in <module>
+    import circuit_brain.utils as utils
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/__init__.py", line 1, in <module>
+    from .ridge_cv import RidgeCV
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_cv.py", line 4, in <module>
+    import circuit_brain.utils.ridge_torch_utils as rtu
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_torch_utils.py", line 5, in <module>
+    from sklearn.model_selection import KFold
+ModuleNotFoundError: No module named 'sklearn'
+Traceback (most recent call last):
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/baseline.py", line 5, in <module>
+    import circuit_brain.utils as utils
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/__init__.py", line 1, in <module>
+    from .ridge_cv import RidgeCV
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_cv.py", line 4, in <module>
+    import circuit_brain.utils.ridge_torch_utils as rtu
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_torch_utils.py", line 5, in <module>
+    from sklearn.model_selection import KFold
+ModuleNotFoundError: No module named 'sklearn'
+Traceback (most recent call last):
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/baseline.py", line 5, in <module>
+    import circuit_brain.utils as utils
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/__init__.py", line 1, in <module>
+    from .ridge_cv import RidgeCV
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_cv.py", line 4, in <module>
+    import circuit_brain.utils.ridge_torch_utils as rtu
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_torch_utils.py", line 5, in <module>
+    from sklearn.model_selection import KFold
+ModuleNotFoundError: No module named 'sklearn'
+Traceback (most recent call last):
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/baseline.py", line 5, in <module>
+    import circuit_brain.utils as utils
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/__init__.py", line 1, in <module>
+    from .ridge_cv import RidgeCV
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_cv.py", line 4, in <module>
+    import circuit_brain.utils.ridge_torch_utils as rtu
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_torch_utils.py", line 5, in <module>
+    from sklearn.model_selection import KFold
+ModuleNotFoundError: No module named 'sklearn'
+Traceback (most recent call last):
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/baseline.py", line 5, in <module>
+    import circuit_brain.utils as utils
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/__init__.py", line 1, in <module>
+    from .ridge_cv import RidgeCV
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_cv.py", line 4, in <module>
+    import circuit_brain.utils.ridge_torch_utils as rtu
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_torch_utils.py", line 5, in <module>
+    from sklearn.model_selection import KFold
+ModuleNotFoundError: No module named 'sklearn'
+Traceback (most recent call last):
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/baseline.py", line 5, in <module>
+    import circuit_brain.utils as utils
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/__init__.py", line 1, in <module>
+    from .ridge_cv import RidgeCV
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_cv.py", line 4, in <module>
+    import circuit_brain.utils.ridge_torch_utils as rtu
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_torch_utils.py", line 5, in <module>
+    from sklearn.model_selection import KFold
+ModuleNotFoundError: No module named 'sklearn'
+Traceback (most recent call last):
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/baseline.py", line 5, in <module>
+    import circuit_brain.utils as utils
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/__init__.py", line 1, in <module>
+    from .ridge_cv import RidgeCV
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_cv.py", line 4, in <module>
+    import circuit_brain.utils.ridge_torch_utils as rtu
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_torch_utils.py", line 5, in <module>
+    from sklearn.model_selection import KFold
+ModuleNotFoundError: No module named 'sklearn'
+Traceback (most recent call last):
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/baseline.py", line 5, in <module>
+    import circuit_brain.utils as utils
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/__init__.py", line 1, in <module>
+    from .ridge_cv import RidgeCV
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_cv.py", line 4, in <module>
+    import circuit_brain.utils.ridge_torch_utils as rtu
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_torch_utils.py", line 5, in <module>
+    from sklearn.model_selection import KFold
+ModuleNotFoundError: No module named 'sklearn'
+Traceback (most recent call last):
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/baseline.py", line 5, in <module>
+    import circuit_brain.utils as utils
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/__init__.py", line 1, in <module>
+    from .ridge_cv import RidgeCV
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_cv.py", line 4, in <module>
+    import circuit_brain.utils.ridge_torch_utils as rtu
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_torch_utils.py", line 5, in <module>
+    from sklearn.model_selection import KFold
+ModuleNotFoundError: No module named 'sklearn'
+Traceback (most recent call last):
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/baseline.py", line 5, in <module>
+    import circuit_brain.utils as utils
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/__init__.py", line 1, in <module>
+    from .ridge_cv import RidgeCV
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_cv.py", line 4, in <module>
+    import circuit_brain.utils.ridge_torch_utils as rtu
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_torch_utils.py", line 5, in <module>
+    from sklearn.model_selection import KFold
+ModuleNotFoundError: No module named 'sklearn'
+Traceback (most recent call last):
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/baseline.py", line 5, in <module>
+    import circuit_brain.utils as utils
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/__init__.py", line 1, in <module>
+    from .ridge_cv import RidgeCV
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_cv.py", line 4, in <module>
+    import circuit_brain.utils.ridge_torch_utils as rtu
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_torch_utils.py", line 5, in <module>
+    from sklearn.model_selection import KFold
+ModuleNotFoundError: No module named 'sklearn'
+Traceback (most recent call last):
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/baseline.py", line 5, in <module>
+    import circuit_brain.utils as utils
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/__init__.py", line 1, in <module>
+    from .ridge_cv import RidgeCV
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_cv.py", line 4, in <module>
+    import circuit_brain.utils.ridge_torch_utils as rtu
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_torch_utils.py", line 5, in <module>
+    from sklearn.model_selection import KFold
+ModuleNotFoundError: No module named 'sklearn'
+Traceback (most recent call last):
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/baseline.py", line 5, in <module>
+    import circuit_brain.utils as utils
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/__init__.py", line 1, in <module>
+    from .ridge_cv import RidgeCV
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_cv.py", line 4, in <module>
+    import circuit_brain.utils.ridge_torch_utils as rtu
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_torch_utils.py", line 5, in <module>
+    from sklearn.model_selection import KFold
+ModuleNotFoundError: No module named 'sklearn'
+Traceback (most recent call last):
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/baseline.py", line 5, in <module>
+    import circuit_brain.utils as utils
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/__init__.py", line 1, in <module>
+    from .ridge_cv import RidgeCV
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_cv.py", line 4, in <module>
+    import circuit_brain.utils.ridge_torch_utils as rtu
+  File "/BRAIN/circuit-alignment/work/circuit-brain-prune/circuit_brain/utils/ridge_torch_utils.py", line 5, in <module>
+    from sklearn.model_selection import KFold
+ModuleNotFoundError: No module named 'sklearn'

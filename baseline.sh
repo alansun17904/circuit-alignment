@@ -1,8 +1,8 @@
-#!/bin/bash
+python3 baseline.py Llama-2-7b meta-llama/Llama-2-7b-hf "llama2-7b-hf-plato.pkl" --batch_size 64 --text_type plato --hf_model --hf_model_id meta-llama/Llama-2-7b-hf
+python3 baseline.py Llama-2-7b meta-llama/Llama-2-7b-hf "llama2-7b-hf-randtok.pkl" --batch_size 64 --text_type randtok --hf_model --hf_model_id meta-llama/Llama-2-7b-hf
+python3 baseline.py Llama-2-7b meta-llama/Llama-2-7b-hf "llama2-7b-hf-poa.pkl" --batch_size 64 --text_type poa --hf_model --hf_model_id meta-llama/Llama-2-7b-hf
 
-models=(gpt2-small gpt2-medium gpt2-large gpt2-xl)
-
-for mname in "${models[@]}"
-do
-	python3 baseline2.py $mname gpt2 "data/align-benchmark/$mname-lt.pkl" --batch_size 64
-done
+python3 baseline.py Llama-2-13b meta-llama/Llama-2-13b-hf "llama2-13b-hf-norm.pkl" --batch_size 32 --text_type norm --hf_model --hf_model_id meta-llama/Llama-2-13b-hf
+python3 baseline.py Llama-2-13b meta-llama/Llama-2-13b-hf "llama2-13b-hf-plato.pkl" --batch_size 32 --text_type plato --hf_model --hf_model_id meta-llama/Llama-2-13b-hf
+python3 baseline.py Llama-2-13b meta-llama/Llama-2-13b-hf "llama2-13b-hf-randtok.pkl" --batch_size 32 --text_type randtok --hf_model --hf_model_id meta-llama/Llama-2-13b-hf
+python3 baseline.py Llama-2-13b meta-llama/Llama-2-13b-hf "llama2-13b-hf-poa.pkl" --batch_size 32 --text_type poa --hf_model --hf_model_id meta-llama/Llama-2-13b-hf
