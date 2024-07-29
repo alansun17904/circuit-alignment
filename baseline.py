@@ -1,3 +1,4 @@
+import sys
 import math
 import pickle
 import argparse
@@ -34,7 +35,15 @@ parser.add_argument(
     "--hf_model", default=False, action="store_true", help="huggingface gated model"
 )
 parser.add_argument(
-    "--hf_model_id", type=str, help="huggingface id of model, only used if hf_model is true",
+    "--hf_model_id",
+    type=str,
+    help="huggingface id of model, only used if hf_model is true",
+)
+parser.add_argument(
+    "--avg_subjs",
+    default=False,
+    action="store_true",
+    help="average fmri recordings of all subjects",
 )
 opts = parser.parse_args()
 
@@ -60,13 +69,15 @@ if __name__ == "__main__":
         words=poa if opts.text_type == "poa" else None,
     )
     if opts.text_type == "plato":
-    # get plato's republic instead and replace the contexts
+        # get plato's republic instead and replace the contexts
         plato = torch.LongTensor(
-            atok(" ".join(open("data/related_texts/the-republic.txt", "r").read().split()))[
-                "input_ids"
-            ]
+            atok(
+                " ".join(
+                    open("data/related_texts/the-republic.txt", "r").read().split()
+                )
+            )["input_ids"]
         )
-        plato = torch.stack(plato.chunk(math.ceil(len(plato) / 128))[:-1]).repeat(2,1)
+        plato = torch.stack(plato.chunk(math.ceil(len(plato) / 128))[:-1]).repeat(2, 1)
         hp.toks = plato
     if opts.text_type == "randtok":
         ran = torch.randint(0, m.ht.cfg.d_vocab, (len(hp.toks), 128))
@@ -79,6 +90,32 @@ if __name__ == "__main__":
             lambda x: [v.squeeze(1) for v in x],
         ]
     )
+    if opts.avg_subjs:
+        gen_rpre = lambda w: transforms.Compose(
+            [
+                transforms.ContextCrop(45),
+                transforms.Avg(),
+            ]
+        )
+        print("Alignment by averaging all subjects together...")
+        sscores, _, _ = utils.sub_align(
+            m,
+            hp,
+            ridge_cv,
+            None,
+            opts.batch_size,
+            1,
+            10,
+            gen_train_rpre=gen_rpre,
+            gen_test_rpre=gen_rpre,
+            train_reprs=list(),
+            test_reprs=list(),
+        )
+        pickle.dump(
+            sscores,
+            open(f"{opts.ofname}", "wb+"),
+        )
+        sys.exit(0)
     subjs, train_reprs, test_reprs = [], [], []
     for sidx in tqdm.tqdm(range(len(hp))):
         sscores, train_reprs, test_reprs = utils.sub_align(

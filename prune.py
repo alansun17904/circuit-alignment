@@ -26,14 +26,15 @@ PatchDir = Literal["noising", "denoising"]
 
 torch.set_grad_enabled(False)
 
+
 class Toks(Dataset):
     def __init__(self, src, des):
         self.src = src
         self.des = des
-    
+
     def __len__(self):
         return self.src.shape[0]
-    
+
     def __getitem__(self, idx):
         return self.src[idx], self.des[idx]
 
@@ -67,11 +68,11 @@ def run_with_patch(
     toks: Toks,
     batch_size: int,
     htype: HeadType = "z",
-    logits_only:bool=True,
+    logits_only: bool = True,
     clean_cache: Optional[ActivationCache] = None,
     rpre: Optional[Callable] = lambda x: x,
     rpost: Optional[Callable] = lambda x: x,
-    cache: List=None
+    cache: List = None,
 ):
     # only cache the activations of the components that we are patching
     layers = m.ht.cfg.n_layers
@@ -88,11 +89,11 @@ def run_with_patch(
             src_cache = clean_cache[i]
         hooks = make_attn_head_hooks(heads, src_cache, htype=htype)
         with m.ht.hooks(fwd_hooks=hooks):
-            #logits.append(m.ht(des)[:, -1, :].to("cpu"))
+            # logits.append(m.ht(des)[:, -1, :].to("cpu"))
             if not logits_only:
                 _, c = m.resid_post(des, rpre=rpre, verbose=False)
                 reprs.append(c)
-    #logits = torch.cat(logits)
+    # logits = torch.cat(logits)
     if logits_only:
         return logits
     return logits, rpost([torch.cat([b[i] for b in reprs]) for i in range(layers)])
@@ -141,7 +142,9 @@ if __name__ == "__main__":
 
     for sidx in range(len(hp)):
         head_scores = dict()
-        for j, head in tqdm.tqdm(enumerate(heads), desc=f"Patching subj-{sidx+1}", total=len(heads)):
+        for j, head in tqdm.tqdm(
+            enumerate(heads), desc=f"Patching subj-{sidx+1}", total=len(heads)
+        ):
             plato_idxs = torch.randperm(len(plato))
             ds_generator = hp.kfold(sidx, 5, 10)
             fold_scores = torch.zeros(5, m.ht.cfg.n_layers)
@@ -155,7 +158,9 @@ if __name__ == "__main__":
                     plato[plato_idxs[: len(train_fmri)]],
                     plato[plato_idxs[-len(test_fmri) :]],
                 )
-                train_dstok, test_dstok = Toks(train_toks, train_corr), Toks(test_toks, test_corr)
+                train_dstok, test_dstok = Toks(train_toks, train_corr), Toks(
+                    test_toks, test_corr
+                )
                 _, train_reprs = run_with_patch(
                     m,
                     [head],
@@ -174,7 +179,7 @@ if __name__ == "__main__":
                     clean_cache=None if (j % N_HEADS == 0) else test_caches[k],
                     logits_only=False,
                     rpre=rpre,
-                    cache=tt_cache
+                    cache=tt_cache,
                 )
                 if j % N_HEADS == 0:
                     train_caches.append(tr_cache)
@@ -184,7 +189,9 @@ if __name__ == "__main__":
                 test_fmri = test_fmri.to("cuda")
                 for l in range(head[0], m.ht.cfg.n_layers):
                     ridge_cv.fit(train_reprs[l].to("cuda"), train_fmri)
-                    l2[l] = torch.mean(ridge_cv.score(test_reprs[l].to("cuda"), test_fmri)).item()
+                    l2[l] = torch.mean(
+                        ridge_cv.score(test_reprs[l].to("cuda"), test_fmri)
+                    ).item()
                 fold_scores[k] = l2
             head_scores[f"{head[0]}.{head[1]}"] = torch.mean(fold_scores, dim=0)
         pickle.dump(head_scores, open(f"{opts.ofname}-subj{sidx}.pkl", "wb"))

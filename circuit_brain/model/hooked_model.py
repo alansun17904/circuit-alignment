@@ -28,13 +28,12 @@ torch.set_grad_enabled(False)
 class Toks(Dataset):
     def __init__(self, toks):
         self.toks = toks
-    
+
     def __len__(self):
         return len(self.toks)
-    
+
     def __getitem__(self, idx):
         return self.toks[idx]
-
 
 
 class BrainAlignTransformer:
@@ -101,13 +100,18 @@ class BrainAlignTransformer:
             ``d_model`` is the dimension of the embeddings. If ``rpre`` or ``rpost`` is specified, then
             this is called on all of the hidden layers (by-batch) before being returned.
         """
+
+        assert len(tokens) > 0
+
         resid_name_filter = lambda name: name.endswith("hook_resid_post")
         if batch_size is None:
             _, ac = self.run_with_cache(
                 tokens, decoder_input, names_filter=resid_name_filter
             )
             return [], [v.to("cpu") for v in rpost(rpre(list(c.values())))]
-        dl = DataLoader(Toks(tokens), batch_size=batch_size, shuffle=False, pin_memory=True)
+        dl = DataLoader(
+            Toks(tokens), batch_size=batch_size, shuffle=False, pin_memory=True
+        )
         reprs, logits = [], []
         for toks in tqdm.tqdm(dl, disable=not verbose):
             _, c = self.run_with_cache(

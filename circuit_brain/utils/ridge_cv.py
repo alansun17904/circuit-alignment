@@ -10,7 +10,7 @@ class RidgeCV:
         self,
         lam_per_target=True,
         n_splits=10,
-        lams=[10**i for i in range(-6, 10)],
+        lams=[10**i for i in range(4, 10)],
         device="cuda",
     ):
         assert device in ["cpu", "cuda"], "Device must be either 'cpu' or 'cuda'."
@@ -33,7 +33,7 @@ class RidgeCV:
     def fit(self, x, y):
         # compute the zscore of both x and y
         x = (x - x.mean(dim=0)) / x.std(dim=0)
-        y = (y - y.mean(dim=0)) / y.std(dim=0)
+        # y = (y - y.mean(dim=0)) / y.std(dim=0)
         if self.device != "cpu":
             x, y = x.to(self.device), y.to(self.device)
         self.W = self._cvr(x, y, self.n_splits, self.lams)

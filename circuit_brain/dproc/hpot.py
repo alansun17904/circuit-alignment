@@ -1,5 +1,5 @@
 import re
-from typing import List, Union, Tuple, Generator
+from typing import List, Union, Tuple, Generator, Optional
 
 from .base import fMRIDataset
 from circuit_brain.utils import word_token_corr
@@ -27,7 +27,16 @@ class HarryPotter(fMRIDataset):
 
     dataset_id = "hp"
     subject_idxs = ["F", "H", "I", "J", "K", "L", "M", "N"]
-    rois = ["PostTemp", "AntTemp", "AngularG", "IFG", "MFG", "IFGorb", "pCingulate", "dmpfc"]
+    rois = [
+        "PostTemp",
+        "AntTemp",
+        "AngularG",
+        "IFG",
+        "MFG",
+        "IFGorb",
+        "pCingulate",
+        "dmpfc",
+    ]
 
     def __init__(
         self,
@@ -77,7 +86,9 @@ class HarryPotter(fMRIDataset):
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
         # load metadata
-        self.words = np.load(self.fmri_dir / "words_fmri.npy") if words is None else words
+        self.words = (
+            np.load(self.fmri_dir / "words_fmri.npy") if words is None else words
+        )
         self.word_timing = np.load(self.fmri_dir / "time_words_fmri.npy")
         self.fmri_timing = np.load(self.fmri_dir / "time_fmri.npy")
         runs = np.load(self.fmri_dir / "runs_fmri.npy")
@@ -167,7 +178,7 @@ class HarryPotter(fMRIDataset):
         return self.subjects[idx]
 
     def kfold(
-        self, subject_idx: int, folds: int, trim: int
+        self, subject_idx: Optional[int] = None, folds: int = 5, trim: int = 5
     ) -> Generator[Tuple[int, np.array, np.array], None, None]:
         """A generator that yields `folds` number of training/test folds while trimming
         off `trim` number of samples at the ends of the training folds.
@@ -191,6 +202,18 @@ class HarryPotter(fMRIDataset):
                 number of examples in the test fold.
         """
         fold_size = len(self.fmri_timing) // folds
+
+        if folds == 1:
+            fold_size = int(len(self.fmri_timing) * 0.2)
+            yield (
+                0,
+                self._idx2samples(subject_idx, list(range(0, fold_size))),
+                self._idx2samples(
+                    subject_idx, list(range(fold_size + trim, len(self.fmri_timing)))
+                ),
+            )
+            return
+
         assert 2 * trim <= fold_size
 
         for f in range(folds):
@@ -215,23 +238,32 @@ class HarryPotter(fMRIDataset):
                 subject_idx, train_idxs
             )
 
-    def _idx2samples(self, subject_idx, idxs):
-        measures = self.subjects[subject_idx][idxs]
+    def _idx2samples(self, subject_idx=None, idxs=None):
+        def single_subject_measurements(sidx):
+            measures = self.subjects[sidx][idxs]
+            if self.pool_rois:
+                rois = self.subject_rois[sidx]
+                # do not get the "all" region
+                roi_measures = np.zeros((len(idxs), 8))
+                if "all" in rois:
+                    del rois["all"]
+                for i, (label, mask) in enumerate(rois.items()):
+                    # average across all voxels that are in the same region
+                    roi_measures[:, i] = np.mean(measures[:, mask], axis=1)
 
-        if self.pool_rois:
-            rois = self.subject_rois[subject_idx]
-            # do not get the "all" region
-            roi_measures = np.zeros((len(idxs), 8))
-            if "all" in rois:
-                del rois["all"]
-            for i, (label, mask) in enumerate(rois.items()):
-                # average across all voxels that are in the same region
-                roi_measures[:, i] = np.mean(measures[:, mask], axis=1)
+                measures = roi_measures
 
-            measures = roi_measures
+            # normalize each voxel/roi across time
+            return (measures - np.mean(measures, axis=0)) / np.std(measures, axis=0)
 
-        # normalize each voxel/roi across time
-        measures = (measures - np.mean(measures, axis=0)) / np.std(measures, axis=0)
+        if subject_idx is not None:
+            measures = single_subject_measurements(subject_idx)
+        else:  # average across all subjects
+            measures = []
+            for s in range(len(self)):
+                measures.append(single_subject_measurements(s))
+            measures = np.mean(measures, axis=0)
+
         return (
             torch.Tensor(measures),
             torch.LongTensor(self.toks)[idxs],
