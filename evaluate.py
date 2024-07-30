@@ -2,7 +2,7 @@ import tqdm
 import json
 import argparse
 from typing import List, Any
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, AutoModelForCausalLM
 
 import torch
 import torch.nn.functional as F
@@ -59,6 +59,7 @@ def parse_args():
     parser.add_argument("fname", help="output filename")
     parser.add_argument("--batch_size", type=int, help="batch size", default=32)
     parser.add_argument("--shots", type=int, help="number of prompting examples", default=0)
+    parser.add_argument("--hf_model", default=False, action="store_true", help="huggingface gated model")
     return parser.parse_args()
 
 
@@ -91,8 +92,13 @@ if __name__ == "__main__":
 
     args = parse_args()
 
-    atok = AutoTokenizer.from_pretrained(args.tok_name)
-    model = HookedTransformer.from_pretrained(args.model_name)
+    if not args.hf_model:
+        atok = AutoTokenizer.from_pretrained(args.tok_name)
+        model = HookedTransformer.from_pretrained(args.model_name)
+    else:
+        atok = AutoTokenizer.from_pretrained(args.tok_name)
+        hf_model = AutoModelForCausalLM.from_pretrained(args.tok_name)
+        model = HookedTransformer.from_pretrained(args.model_name, hf_model=hf_model, tokenizer=atok)
 
     atok.truncation_side = "left"
 
